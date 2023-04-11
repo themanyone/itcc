@@ -14,9 +14,26 @@ Use Interactive TCC for C programming, like this:
 
  $ ./itcc
  tcc> int a = 5;
- tcc> int a -= 2;
- tcc> printf("a is %i\n", a);
- 3
+ tcc> a -= 2;
+ tcc> if (a < 4) {
+ ['-:16: error: identifier expected']
+ tcc>    printf("a is %i\n", a);
+ ['-:17: error: identifier expected']
+ tcc> }
+ a is 3
+
+Ignore errors. The result is printed after typing the closing brace "}".
+
+Tired of typing all those semicolons and parenthesis? Crap coding is also supported. Crap is a light-weight wrapper around standard C code. https://themanyone.github.io/crap/
+
+ $ ./icrap
+ crap> puts  "hi"
+ hi
+ crap> for  int x=3;x--;
+ crap>     printf  "x is %i\n", x
+ x is 2
+ x is 1
+ x is 0
 
 Interactive TCC works about like Interactive GCC (igcc), which is also included in this package. If you can convert C++ to C, you might even be able to struggle through some of following examples using itcc.
  
