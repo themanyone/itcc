@@ -23,7 +23,7 @@ file_boilerplate = """#include <stdio.h>
 $user_includes
 
 main
-	$user_commands"""
+$user_commands"""
 
 
 def get_full_source( runner ):

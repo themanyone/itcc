@@ -185,7 +185,7 @@ class Runner:
 						typ = UserInput.INCLUDE
 					else:
 						typ = UserInput.COMMAND
-					self.user_input.append( UserInput( "\t" + inp, typ ) )
+					self.user_input.append( UserInput( "    " + inp, typ ) )
 					self.input_num += 1
 
 				if run_cmp:
