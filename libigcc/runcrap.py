@@ -183,9 +183,10 @@ class Runner:
 						self.user_input = self.user_input[ : self.input_num ]
 					if incl_re.match( inp ):
 						typ = UserInput.INCLUDE
+						self.user_input.append( UserInput( inp, typ ) )
 					else:
 						typ = UserInput.COMMAND
-					self.user_input.append( UserInput( "    " + inp, typ ) )
+						self.user_input.append( UserInput( "    " + inp, typ ) )
 					self.input_num += 1
 
 				if run_cmp:
@@ -194,21 +195,21 @@ class Runner:
 
 					if self.compile_error is not None:
 						# print("[Compile error - type .e to see it.]")
-						print(self.compile_error.decode('utf-8').strip().split('\n'))
+						print(self.compile_error.decode())
 					else:
 						stdoutdata, stderrdata = run_exe( self.exefilename )
 
 						if len( stdoutdata ) > self.output_chars_printed:
 							new_output = stdoutdata[self.output_chars_printed:]
 							len_new_output = len( new_output )
-							print(new_output.decode('utf-8'))
+							print(new_output.decode().strip('\n'))
 							self.output_chars_printed += len_new_output
 							self.user_input[ -1 ].output_chars = len_new_output
 
 						if len( stderrdata ) > self.error_chars_printed:
 							new_error = stderrdata[self.error_chars_printed:]
 							len_new_error = len( new_error )
-							print(new_error)
+							print(new_error.decode().strip('\n'))
 							self.error_chars_printed += len_new_error
 							self.user_input[ -1 ].error_chars = len_new_error
 

@@ -821,7 +821,7 @@ def main():
 	#test_compile_warning()
 	#test_remove_compile_error_message()
 
-	print "All tests passed."
+	print("All tests passed.")
 
 
 if __name__ == "__main__":

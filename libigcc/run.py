@@ -190,22 +190,22 @@ class Runner:
 						self )
 
 					if self.compile_error is not None:
-						# print("[Compile error - type .e to see it.]")
-						print(self.compile_error.decode('utf-8').strip().split('\n'))
+						print("[Compile error - type .e to see it.]")
+						# print(self.compile_error.decode())
 					else:
 						stdoutdata, stderrdata = run_exe( self.exefilename )
 
 						if len( stdoutdata ) > self.output_chars_printed:
 							new_output = stdoutdata[self.output_chars_printed:]
 							len_new_output = len( new_output )
-							print(new_output.decode('utf-8'))
+							print(new_output.decode().strip('\n'))
 							self.output_chars_printed += len_new_output
 							self.user_input[ -1 ].output_chars = len_new_output
 
 						if len( stderrdata ) > self.error_chars_printed:
 							new_error = stderrdata[self.error_chars_printed:]
 							len_new_error = len( new_error )
-							print(new_error)
+							print(new_error.decode().strip('\n'))
 							self.error_chars_printed += len_new_error
 							self.user_input[ -1 ].error_chars = len_new_error
 
@@ -286,9 +286,8 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
 			if print_welc:
 				print_welcome()
 			Runner( options, inputfile, exefilename ).do_run()
-		except Exception as e:
-			if e == dot_commands.IGCCQuitException:
-				ret = "quit"
+		except:
+			ret = "quit"
 	finally:
 		sys.stdout = real_sys_stdout
 
