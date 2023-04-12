@@ -199,7 +199,7 @@ crap> #include <wctype.h>
 crap> .l
 #include <wctype.h>
 
-int a;
+    int a;
     a += 2;
 crap> 
 ''' )

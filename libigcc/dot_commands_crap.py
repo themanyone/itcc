@@ -36,7 +36,7 @@ def dot_q( runner ):
 	raise IGCCQuitException()
 
 def dot_l( runner ):
-	print("%s\n\n%s" % ( runner.get_user_includes_string().strip(), runner.get_user_commands_string().strip() ))
+	print("%s\n\n    %s" % ( runner.get_user_includes_string().strip(), runner.get_user_commands_string().strip() ))
 	return False, False
 
 def dot_L( runner ):

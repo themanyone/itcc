@@ -101,8 +101,15 @@ def run_compile( subs_compiler_command, runner ):
 	crap_process = subprocess.Popen( ["crap", "-"], stdin = subprocess.PIPE, stdout = subprocess.PIPE)
 	compile_process = subprocess.Popen( subs_compiler_command,
 		stdin = crap_process.stdout, stderr = subprocess.PIPE )
-	crap_process.communicate(
-		source_code.get_full_source( runner ).encode('utf-8') )
+	# write source code to crap_process stdin and flush stream	
+	crap_process.stdin.write(source_code.get_full_source(runner).encode("utf-8"))
+	crap_process.stdin.flush()
+	
+	# close crap_process stdin and wait for it to complete
+	crap_process.stdin.close()
+	crap_process.wait()
+	
+	# read the output from compile_process stdout and stderr
 	stdoutdata, stderrdata = compile_process.communicate()
 
 	if compile_process.returncode == 0:
