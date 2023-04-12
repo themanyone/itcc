@@ -20,12 +20,20 @@
 #ifndef HELLO_H
 #define HELLO_H
 
-#include <iostream>
+#include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void hello()
 {
-    std::cout << "Hello, " << std::endl;
+    puts("Hello, ");
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // HELLO_H
 

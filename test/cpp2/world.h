@@ -20,12 +20,20 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <iostream>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdio.h>
 
 void world()
 {
-    std::cout << "world!" << std::endl;
+    puts("world!");
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // WORLD_H
 

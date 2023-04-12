@@ -22,10 +22,11 @@ file_boilerplate = """#include <stdio.h>
 #include <string.h>
 $user_includes
 
-main
-$user_commands"""
-
-
+int main(){
+$user_commands
+    return 0;
+}
+"""
 def get_full_source( runner ):
 	return ( file_boilerplate
 		.replace( "$user_commands", runner.get_user_commands_string() )
