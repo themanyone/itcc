@@ -130,7 +130,13 @@ And then start the program like this:
 
 Then type the C++ code you want to execute. It will be compiled with GCC and the results (if any) will be displayed.
 
-Type .h to see some (minimal) help.
+Type .h to see some general help on usage.
+
+Type .h followed by the command name for more help:
+
+ .h printf
+ .h string
+ .h glob
 
 Developing
 ----------

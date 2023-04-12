@@ -89,10 +89,10 @@ def process( inp, runner ):
 	if inp == ".h":
 		return dot_h( runner )
 	elif inp[:3] == ".h ":
-		run_process = subprocess.Popen(["man", "-Hfirefox", "3.", inp[3:]],
+		run_process = subprocess.Popen(["man", "-Hxdg-open", "3.", inp[3:]],
 		stdout = subprocess.PIPE, stderr = subprocess.PIPE )
 		stdout, stderr = run_process.communicate()
-		print(stdout)
+		return False, False
 	for cmd in sorted( dot_commands.keys() ):
 		if inp == cmd:
 			return dot_commands[cmd][1]( runner )
