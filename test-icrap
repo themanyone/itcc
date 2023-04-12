@@ -1,0 +1,836 @@
+#!/usr/bin/python
+
+# igcc - a read-eval-print loop for C/C++ programmers
+#
+# Copyright (C) 2009 Andy Balaam
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA 02110-1301, USA.
+
+import re
+
+import libigcc.runcrap
+from libigcc.runcrap import UserInput
+import libigcc.source_code_crap
+import libigcc.version
+
+class FakeWriteableFile:
+	def __init__( self ):
+		self.lines = []
+
+	def write( self, line ):
+		self.lines.append( line )
+
+class FakeReadableFile:
+	def __init__( self, lines ):
+		self.lines = lines
+
+	def readline( self ):
+		if len( self.lines ) == 0:
+			return None
+		line = self.lines[0]
+		self.lines = self.lines[1:]
+		return line
+
+def assert_strings_equal( str1, str2 ):
+	if str1 == str2:
+		return
+
+	raise AssertionError( "\n" + str1 + "\n!=\n" + str2 )
+
+def assert_strings_match( string, re_string ):
+	cmp_re = re.compile( re_string, re.DOTALL )
+
+	if cmp_re.match( string ):
+		return
+
+	raise AssertionError( "\n" + string
+		+ "\ndoes not match regular expression\n" + re_string )
+
+def run_program( commands, expected_output, print_welcome = False,
+		argv = None ):
+
+	outputfile = FakeWriteableFile()
+	stdinfile = FakeReadableFile( commands )
+	ret = libigcc.runcrap.run( outputfile, stdinfile, print_welcome, argv )
+
+	assert_strings_equal( "".join( outputfile.lines ), expected_output )
+
+	return ret
+
+def run_program_regex_output( commands, expected_output_re ):
+	outputfile = FakeWriteableFile()
+	stdinfile = FakeReadableFile( commands )
+	libigcc.runcrap.run( outputfile, stdinfile, False )
+
+	assert_strings_match( "".join( outputfile.lines ), expected_output_re )
+
+def test_declare_var():
+	commands = [ "int a;" ]
+	expected_output = 'crap> int a;\ncrap> \n'
+	run_program( commands, expected_output )
+
+def test_declare_var_assign():
+	commands = [ "int a;", "a = 10;" ]
+	expected_output = 'crap> int a;\ncrap> a = 10;\ncrap> \n'
+	run_program( commands, expected_output )
+
+def test_declare_and_assign_var_then_print():
+	commands = [ "int a = 10;",
+		r'printf( "%d\n", a );' ]
+
+	expected_output = (
+'''crap> int a = 10;
+crap> printf( "%d\\n", a );
+10
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_print_twice():
+	commands = [ "int a = 10;",
+		r'printf  "%d\n", a',
+		"++a",
+		r'printf  "%d\n", a' ]
+
+	expected_output = (
+'''crap> int a = 10;
+crap> printf  "%d\\n", a
+10
+crap> ++a
+crap> printf  "%d\\n", a
+11
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+def test_compile_error():
+	commands = [ "int a" ] # no semicolon
+
+	expected_output = (
+'''crap> int a
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+def test_compile_error_display():
+	commands = [
+		"tint a", # typo
+		".e" ]
+
+	# Just look for a string "xpected" in the compiler output.
+	expected_output_re = (
+'''crap> tint a
+-:8: error: 'tint' undeclared
+crap> .e
+-:8: error: 'tint' undeclared
+crap> 
+''' )
+
+	run_program_regex_output( commands, expected_output_re )
+
+
+def test_include():
+	commands = [
+		'#include <glob.h>',
+		'glob_t pglob',
+		'int g = glob  "*.txt", 0, NULL, &pglob',
+		'for  int i=pglob.gl_pathc;i--;  puts  pglob.gl_pathv[i]' ]
+
+	expected_output = (
+r'''crap> #include <glob.h>
+crap> glob_t pglob
+crap> int g = glob  "*.txt", 0, NULL, &pglob
+crap> for  int i=pglob.gl_pathc;i--;  puts  pglob.gl_pathv[i]
+README.txt
+COPYING.txt
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+def test_multiple_repeated_includes():
+	commands = [
+		'#include <glob.h>',
+		'glob_t pglob;',
+		'int g = glob  "*.txt", 0, NULL, &pglob',
+		'   # include <libgen.h>',
+		'puts  dirname(pglob.gl_pathv[1])' ]
+
+	expected_output = (
+r'''crap> #include <glob.h>
+crap> glob_t pglob;
+crap> int g = glob  "*.txt", 0, NULL, &pglob
+crap>    # include <libgen.h>
+crap> puts  dirname(pglob.gl_pathv[1])
+.
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+def test_list_program():
+	commands = [
+		'int a;',
+		'a += 2;',
+		'#include <wctype.h>',
+		'.l' ]
+
+	expected_output = (
+r'''crap> int a;
+crap> a += 2;
+crap> #include <wctype.h>
+crap> .l
+#include <wctype.h>
+
+int a;
+    a += 2;
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+class FakeRunner:
+	def __init__( self, user_commands_string, user_includes_string ):
+		self.user_commands_string = user_commands_string
+		self.user_includes_string = user_includes_string
+
+	def get_user_commands_string( self ):
+		return self.user_commands_string
+
+	def get_user_includes_string( self ):
+		return self.user_includes_string
+
+def test_list_full_program():
+	commands = [
+		'int a;',
+		'a += 2;',
+		'#include <iconv.h>',
+		'.L' ]
+
+	fakerunner = FakeRunner( 'int a;\na += 2;\n',
+		"#include <iconv.h>\n" )
+
+	expected_output = (
+'''crap> int a;
+crap> a += 2;
+crap> #include <iconv.h>
+crap> .L
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <iconv.h>
+
+
+int main(){
+    int a;
+    a += 2;
+    return 0;
+}
+
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+def test_help_message():
+	commands = [
+		'.h' ]
+
+	expected_output_re = ".*Show this help message"
+
+	run_program_regex_output( commands, expected_output_re )
+
+def test_quit():
+	commands = [
+		'.q' ]
+
+	expected_output = "crap> .q\n"
+
+	ret = run_program( commands, expected_output )
+
+	assert_strings_equal( ret, "quit" )
+
+def test_welcome_message():
+	commands = []
+	expected_output = (
+'''igcc $version
+Released under GNU GPL version 2 or later, with NO WARRANTY.
+Type ".h" for help.
+
+crap> 
+''' ).replace( "$version", libigcc.version.VERSION )
+
+	run_program( commands, expected_output, True )
+
+def test_include_dir_on_cmd_line():
+	commands = [ '#include "hello.h"',
+		'hello();' ]
+
+	expected_output = (
+'''crap> #include "hello.h"
+crap> hello();
+Hello, 
+crap> 
+''' )
+
+	argv = [ "-I", "test/cpp" ]
+
+	run_program( commands, expected_output, argv = argv )
+
+
+def test_2_include_dirs_on_cmd_line():
+	commands = [ '#include "hello.h"',
+		'hello();',
+		'#include "world.h"',
+		'world();', ]
+
+	expected_output = (
+'''crap> #include "hello.h"
+crap> hello();
+Hello, 
+crap> #include "world.h"
+crap> world();
+world!
+crap> 
+''' )
+
+	argv = [ "-I", "test/cpp", "-I", "test/cpp2" ]
+
+	run_program( commands, expected_output, argv = argv )
+
+
+def test_lib():
+	commands = [ '#include "math.h"',
+		r'printf("2^4=%f", pow(2,4));', ]
+
+	expected_output = (
+r'''crap> #include "math.h"
+crap> printf("2^4=%f", pow(2,4));
+2^4=16.000000
+crap> 
+''' )
+
+	argv = [ "-lm" ]
+
+	run_program( commands, expected_output, argv = argv )
+
+
+def test_print_license():
+	commands = [ '.c' ]
+
+	expected_output_re = (
+r'''crap> \.c
+.*GNU GENERAL PUBLIC LICENSE.*
+crap> 
+''' )
+
+	run_program_regex_output( commands, expected_output_re )
+
+
+
+def test_print_warranty():
+	commands = [ '.w' ]
+
+	expected_output_re = (
+r'''crap> \.w
+.*Disclaimer of Warranty.*
+crap> 
+''' )
+
+	run_program_regex_output( commands, expected_output_re )
+
+
+def test_runner_get_user_input():
+	runner = libigcc.runcrap.Runner( None, None, None )
+	runner.user_input = [
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND),
+		UserInput("2", UserInput.COMMAND) ]
+	runner.input_num = 3
+	assert( tuple( runner.get_user_input() ) == (
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND),
+		UserInput("2", UserInput.COMMAND) ) )
+
+	runner.input_num = 2
+	assert( tuple( runner.get_user_input() ) == (
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND) ) )
+
+	runner.input_num = 1
+	assert( tuple( runner.get_user_input() ) == (
+		UserInput("0", UserInput.COMMAND), ) )
+
+
+def test_runner_get_user_commands():
+	runner = libigcc.runcrap.Runner( None, None, None )
+	runner.user_input = [
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND),
+		UserInput("X", UserInput.INCLUDE),
+		UserInput("2", UserInput.COMMAND) ]
+	runner.input_num = 4
+	assert( tuple( runner.get_user_commands() ) == ( "0", "1", "2" ) )
+
+	runner.input_num = 2
+	assert( tuple( runner.get_user_commands() ) == ( "0", "1" ) )
+
+	runner.input_num = 1
+	assert( tuple( runner.get_user_commands() ) == ( "0", ) )
+
+
+def test_undo_1():
+	commands = [
+		'int a;',
+		'a = 5;',
+		'foobar',
+		'.u',
+		r'printf("%i\n",a);',
+		]
+
+	expected_output = (
+r'''crap> int a;
+crap> a = 5;
+crap> foobar
+-:10: error: 'foobar' undeclared
+crap> .u
+[Undone '    foobar'.]
+crap> printf("%i\n",a);
+5
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_2():
+	commands = [
+		'int a = 5;',
+		'++a;',
+		'++a;',
+		'++a;',
+		'.u',
+		'.u',
+		r'printf("%i\n",a);',
+		]
+
+	expected_output = (
+r'''crap> int a = 5;
+crap> ++a;
+crap> ++a;
+crap> ++a;
+crap> .u
+[Undone '    ++a;'.]
+crap> .u
+[Undone '    ++a;'.]
+crap> printf("%i\n",a);
+6
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_before_beginning():
+	commands = [
+		'int a = 5;',
+		'.u',
+		'.u',
+		'.u',
+		r'printf("%i\n",a);',
+		'.u',
+		'int b = 7;',
+		r'printf("%i\n",b);',
+		]
+
+	expected_output = (
+r'''crap> int a = 5;
+crap> .u
+[Undone '    int a = 5;'.]
+crap> .u
+[Nothing to undo.]
+crap> .u
+[Nothing to undo.]
+crap> printf("%i\n",a);
+-:8: error: 'a' undeclared
+crap> .u
+[Undone '    printf("%i\n",a);'.]
+crap> int b = 7;
+crap> printf("%i\n",b);
+7
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_includes_and_commands():
+	commands = [
+		'int a = 5;',
+		'#include <unistd.h>',
+		'++a;',
+		'.u',
+		'.u',
+		'.u',
+		]
+
+	expected_output = (
+r'''crap> int a = 5;
+crap> #include <unistd.h>
+crap> ++a;
+crap> .u
+[Undone '    ++a;'.]
+crap> .u
+[Undone '#include <unistd.h>'.]
+crap> .u
+[Undone '    int a = 5;'.]
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_redo_1():
+	commands = [
+		'int a = 1;',
+		'++a;',
+		'.u',
+		'.r',
+		r'printf("%i\n",a);',
+		]
+
+	expected_output = (
+r'''crap> int a = 1;
+crap> ++a;
+crap> .u
+[Undone '    ++a;'.]
+crap> .r
+[Redone '    ++a;'.]
+crap> printf("%i\n",a);
+2
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+
+
+def test_redo_2():
+	commands = [
+		'int a = 1;',
+		'++a;',
+		'.u',
+		'.u',
+		'.r',
+		'.r',
+		r'printf("%i\n",a);',
+		]
+
+	expected_output = (
+r'''crap> int a = 1;
+crap> ++a;
+crap> .u
+[Undone '    ++a;'.]
+crap> .u
+[Undone '    int a = 1;'.]
+crap> .r
+[Redone '    int a = 1;'.]
+crap> .r
+[Redone '    ++a;'.]
+crap> printf("%i\n",a);
+2
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+
+
+def test_redo_before_beginning():
+	commands = [
+		'int a = 1;',
+		'++a;',
+		'.u',
+		'.u',
+		'.u',
+		'.r',
+		'.r',
+		r'printf("%i\n",a);',
+		]
+
+	expected_output = (
+r'''crap> int a = 1;
+crap> ++a;
+crap> .u
+[Undone '    ++a;'.]
+crap> .u
+[Undone '    int a = 1;'.]
+crap> .u
+[Nothing to undo.]
+crap> .r
+[Redone '    int a = 1;'.]
+crap> .r
+[Redone '    ++a;'.]
+crap> printf("%i\n",a);
+2
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+
+def test_redo_after_end():
+	commands = [
+		'int a = 1;',
+		'++a;',
+		'.u',
+		'.r',
+		'.r',
+		r'printf("%i\n",a);',
+		]
+
+	expected_output = (
+r'''crap> int a = 1;
+crap> ++a;
+crap> .u
+[Undone '    ++a;'.]
+crap> .r
+[Redone '    ++a;'.]
+crap> .r
+[Nothing to redo.]
+crap> printf("%i\n",a);
+2
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_redo_includes_and_commands():
+	commands = [
+		'int a = 5;',
+		'#include <unistd.h>',
+		'++a;',
+		'.u',
+		'.u',
+		'.u',
+		'.r',
+		'.r',
+		'.r',
+		]
+
+	expected_output = (
+r'''crap> int a = 5;
+crap> #include <unistd.h>
+crap> ++a;
+crap> .u
+[Undone '    ++a;'.]
+crap> .u
+[Undone '#include <unistd.h>'.]
+crap> .u
+[Undone '    int a = 5;'.]
+crap> .r
+[Redone '    int a = 5;'.]
+crap> .r
+[Redone '#include <unistd.h>'.]
+crap> .r
+[Redone '    ++a;'.]
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_then_new_commands():
+	commands = [
+		'int a = 5;',
+		'++a;',
+		'.u',
+		'--a;',
+		'--a;',
+		'.u',
+		r'printf("%i\n",a);',
+		]
+
+	expected_output = (
+r'''crap> int a = 5;
+crap> ++a;
+crap> .u
+[Undone '    ++a;'.]
+crap> --a;
+crap> --a;
+crap> .u
+[Undone '    --a;'.]
+crap> printf("%i\n",a);
+4
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_redo_with_output():
+	commands = [
+		'int a = 56;',
+		r'printf("%i\n",a);',
+		'.u',
+		'.r',
+		'.u',
+		r'printf("%i\n",12);',
+		]
+
+	expected_output = (
+r'''crap> int a = 56;
+crap> printf("%i\n",a);
+56
+crap> .u
+[Undone '    printf("%i\n",a);'.]
+crap> .r
+[Redone '    printf("%i\n",a);'.]
+56
+crap> .u
+[Undone '    printf("%i\n",a);'.]
+crap> printf("%i\n",12);
+12
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+
+def test_print_stderr_twice():
+	commands = [ "int a = 10;",
+		r'fprintf(stderr, "%i\n", a);',
+		"++a;",
+		r'fprintf(stderr, "%i\n", a);' ]
+
+	expected_output = (
+'''crap> int a = 10;
+crap> fprintf(stderr, "%i\\n", a);
+10
+crap> ++a;
+crap> fprintf(stderr, "%i\\n", a);
+11
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_print_stderr_stdout():
+	commands = [ "int a = 10;",
+		r'fprintf(stderr, "%i\n", a);',
+		"++a;",
+		r'printf("%i\n",a);' ]
+
+	expected_output = (
+'''crap> int a = 10;
+crap> fprintf(stderr, "%i\\n", a);
+10
+crap> ++a;
+crap> printf("%i\\n",a);
+11
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_stderr_then_new_commands():
+	commands = [
+		'int a = 5;',
+		'++a;',
+		'.u',
+		'--a;',
+		'--a;',
+		'.u',
+		r'fprintf(stderr, "%i\n", a);',
+		]
+
+	expected_output = (
+r'''crap> int a = 5;
+crap> ++a;
+crap> .u
+[Undone '    ++a;'.]
+crap> --a;
+crap> --a;
+crap> .u
+[Undone '    --a;'.]
+crap> fprintf(stderr, "%i\n", a);
+4
+crap> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def main():
+	test_declare_var()
+	test_declare_var_assign()
+	test_declare_and_assign_var_then_print()
+	test_print_twice()
+	test_compile_error()
+	test_compile_error_display()
+	test_include()
+	test_multiple_repeated_includes()
+	test_list_program()
+	test_list_full_program()
+	test_help_message();
+	test_quit()
+	test_welcome_message()
+	test_include_dir_on_cmd_line()
+	test_2_include_dirs_on_cmd_line()
+	test_lib()
+	test_print_license()
+	test_print_warranty()
+	test_runner_get_user_input()
+	test_runner_get_user_commands()
+	test_undo_1()
+	test_undo_2()
+	test_undo_before_beginning()
+	test_undo_includes_and_commands()
+	test_redo_1()
+	test_redo_2()
+	test_redo_before_beginning()
+	test_redo_after_end()
+	test_redo_includes_and_commands()
+	test_undo_then_new_commands()
+	test_undo_redo_with_output()
+	test_print_stderr_twice()
+	test_print_stderr_stdout()
+	test_undo_stderr_then_new_commands()
+
+	#test_readline_history();
+	#test_print_command();
+	#test_edit_in_vim();
+	#test_compile_warning()
+	#test_remove_compile_error_message()
+
+	print("All tests passed.")
+
+
+if __name__ == "__main__":
+	main()
+
+
