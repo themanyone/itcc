@@ -29,7 +29,7 @@ def dot_c( runner ):
 	return False, False
 
 def dot_e( runner ):
-	print(runner.compile_error)
+	print(runner.compile_error.decode().strip('\n'))
 	return False, False
 
 def dot_q( runner ):

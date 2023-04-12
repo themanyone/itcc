@@ -192,7 +192,7 @@ class Runner:
 
 					if self.compile_error is not None:
 						# print("[Compile error - type .e to see it.]")
-						print(self.compile_error.decode())
+						print(self.compile_error.decode().strip('\n'))
 					else:
 						stdoutdata, stderrdata = run_exe( self.exefilename )
 
