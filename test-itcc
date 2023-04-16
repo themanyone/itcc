@@ -124,7 +124,7 @@ def test_compile_error():
 
 	expected_output = (
 '''tcc> int a
--:12: error: ';' expected (got "return")
+-:8: error: ';' expected (got "return")
 tcc> 
 ''' )
 
@@ -138,9 +138,9 @@ def test_compile_error_display():
 	# Just look for a string "xpected" in the compiler output.
 	expected_output_re = (
 '''tcc> int a
--:12: error: ';' expected \(got "return"\)
+-:8: error: \';\' expected \(got "return"\)
 tcc> .e
--:12: error: ';' expected \(got "return"\)
+-:8: error: \';\' expected \(got "return"\)
 tcc> 
 ''' )
 
@@ -201,7 +201,7 @@ tcc> .l
 #include <wctype.h>
 
 int a;
-a += 2;
+    a += 2;
 tcc> 
 ''' )
 
@@ -225,7 +225,7 @@ def test_list_full_program():
 		'#include <iconv.h>',
 		'.L' ]
 
-	fakerunner = FakeRunner( 'int a;\na += 2;\n',
+	fakerunner = FakeRunner( 'int a;\n    a += 2;\n',
 		"#include <iconv.h>\n" )
 
 	expected_output = (
@@ -233,9 +233,19 @@ def test_list_full_program():
 tcc> a += 2;
 tcc> #include <iconv.h>
 tcc> .L
-%s
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <iconv.h>
+
+int main(){
+    int a;
+    a += 2;
+    return 0;
+}
+
 tcc> 
-''' % libigcc.source_code.get_full_source( fakerunner ) )
+''')
 
 	run_program( commands, expected_output )
 
@@ -399,9 +409,9 @@ def test_undo_1():
 r'''tcc> int a;
 tcc> a = 5;
 tcc> foobar
--:14: error: 'foobar' undeclared
+-:10: error: 'foobar' undeclared
 tcc> .u
-[Undone 'foobar'.]
+[Undone '    foobar'.]
 tcc> printf("%i\n",a);
 5
 tcc> 
@@ -427,9 +437,9 @@ tcc> ++a;
 tcc> ++a;
 tcc> ++a;
 tcc> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 tcc> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 tcc> printf("%i\n",a);
 6
 tcc> 
@@ -453,15 +463,15 @@ def test_undo_before_beginning():
 	expected_output = (
 r'''tcc> int a = 5;
 tcc> .u
-[Undone 'int a = 5;'.]
+[Undone '    int a = 5;'.]
 tcc> .u
 [Nothing to undo.]
 tcc> .u
 [Nothing to undo.]
 tcc> printf("%i\n",a);
--:9: error: 'a' undeclared
+-:7: error: 'a' undeclared
 tcc> .u
-[Undone 'printf("%i\n",a);'.]
+[Undone '    printf("%i\n",a);'.]
 tcc> int b = 7;
 tcc> printf("%i\n",b);
 7
@@ -486,11 +496,11 @@ r'''tcc> int a = 5;
 tcc> #include <unistd.h>
 tcc> ++a;
 tcc> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 tcc> .u
 [Undone '#include <unistd.h>'.]
 tcc> .u
-[Undone 'int a = 5;'.]
+[Undone '    int a = 5;'.]
 tcc> 
 ''' )
 
@@ -510,9 +520,9 @@ def test_redo_1():
 r'''tcc> int a = 1;
 tcc> ++a;
 tcc> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 tcc> .r
-[Redone '++a;'.]
+[Redone '    ++a;'.]
 tcc> printf("%i\n",a);
 2
 tcc> 
@@ -538,13 +548,13 @@ def test_redo_2():
 r'''tcc> int a = 1;
 tcc> ++a;
 tcc> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 tcc> .u
-[Undone 'int a = 1;'.]
+[Undone '    int a = 1;'.]
 tcc> .r
-[Redone 'int a = 1;'.]
+[Redone '    int a = 1;'.]
 tcc> .r
-[Redone '++a;'.]
+[Redone '    ++a;'.]
 tcc> printf("%i\n",a);
 2
 tcc> 
@@ -571,15 +581,15 @@ def test_redo_before_beginning():
 r'''tcc> int a = 1;
 tcc> ++a;
 tcc> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 tcc> .u
-[Undone 'int a = 1;'.]
+[Undone '    int a = 1;'.]
 tcc> .u
 [Nothing to undo.]
 tcc> .r
-[Redone 'int a = 1;'.]
+[Redone '    int a = 1;'.]
 tcc> .r
-[Redone '++a;'.]
+[Redone '    ++a;'.]
 tcc> printf("%i\n",a);
 2
 tcc> 
@@ -603,9 +613,9 @@ def test_redo_after_end():
 r'''tcc> int a = 1;
 tcc> ++a;
 tcc> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 tcc> .r
-[Redone '++a;'.]
+[Redone '    ++a;'.]
 tcc> .r
 [Nothing to redo.]
 tcc> printf("%i\n",a);
@@ -634,17 +644,17 @@ r'''tcc> int a = 5;
 tcc> #include <unistd.h>
 tcc> ++a;
 tcc> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 tcc> .u
 [Undone '#include <unistd.h>'.]
 tcc> .u
-[Undone 'int a = 5;'.]
+[Undone '    int a = 5;'.]
 tcc> .r
-[Redone 'int a = 5;'.]
+[Redone '    int a = 5;'.]
 tcc> .r
 [Redone '#include <unistd.h>'.]
 tcc> .r
-[Redone '++a;'.]
+[Redone '    ++a;'.]
 tcc> 
 ''' )
 
@@ -666,11 +676,11 @@ def test_undo_then_new_commands():
 r'''tcc> int a = 5;
 tcc> ++a;
 tcc> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 tcc> --a;
 tcc> --a;
 tcc> .u
-[Undone '--a;'.]
+[Undone '    --a;'.]
 tcc> printf("%i\n",a);
 4
 tcc> 
@@ -694,12 +704,12 @@ r'''tcc> int a = 56;
 tcc> printf("%i\n",a);
 56
 tcc> .u
-[Undone 'printf("%i\n",a);'.]
+[Undone '    printf("%i\n",a);'.]
 tcc> .r
-[Redone 'printf("%i\n",a);'.]
+[Redone '    printf("%i\n",a);'.]
 56
 tcc> .u
-[Undone 'printf("%i\n",a);'.]
+[Undone '    printf("%i\n",a);'.]
 tcc> printf("%i\n",12);
 12
 tcc> 
@@ -762,11 +772,11 @@ def test_undo_stderr_then_new_commands():
 r'''tcc> int a = 5;
 tcc> ++a;
 tcc> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 tcc> --a;
 tcc> --a;
 tcc> .u
-[Undone '--a;'.]
+[Undone '    --a;'.]
 tcc> fprintf(stderr, "%i\n", a);
 4
 tcc> 

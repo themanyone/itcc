@@ -22,12 +22,8 @@ file_boilerplate = """#include <cstdio>
 #include <string>
 $user_includes
 using namespace std;
-
-int main()
-{
-	$user_commands
-
-	return 0;
+int main(){
+$user_commands    return 0;
 }
 """
 

@@ -22,12 +22,8 @@ file_boilerplate = """#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 $user_includes
-
-int main()
-{
-	$user_commands
-
-	return 0;
+int main(){
+$user_commands    return 0;
 }
 """
 

@@ -28,7 +28,7 @@ import sys
 import tempfile
 from optparse import OptionParser
 
-from . import dot_commands
+from . import dot_commands_c as dot_commands
 from . import source_code_c as source_code
 from . import version
 
@@ -179,11 +179,13 @@ class Runner:
 				if col_inp:
 					if self.input_num < len( self.user_input ):
 						self.user_input = self.user_input[ : self.input_num ]
+						self.user_input.append( UserInput( "    " + inp, typ ) )
 					if incl_re.match( inp ):
 						typ = UserInput.INCLUDE
+						self.user_input.append( UserInput( inp, typ ) )
 					else:
 						typ = UserInput.COMMAND
-					self.user_input.append( UserInput( inp, typ ) )
+						self.user_input.append( UserInput( "    " + inp, typ ) )
 					self.input_num += 1
 
 				if run_cmp:

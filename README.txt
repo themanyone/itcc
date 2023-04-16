@@ -24,7 +24,7 @@ Use Interactive TCC for C programming, like this:
 
 Ignore errors. The result is printed after typing the closing brace "}".
 
-Tired of typing all those semicolons and parenthesis? Crap coding is also supported. Crap is a light-weight wrapper around standard C code. https://themanyone.github.io/crap/
+Tired of typing all those semicolons, curly braces, and parenthesis? Crap coding is also supported. Crap is a light-weight wrapper around standard C code. https://themanyone.github.io/crap/
 
  $ ./icrap
  crap> puts  "hi"
@@ -35,8 +35,8 @@ Tired of typing all those semicolons and parenthesis? Crap coding is also suppor
  x is 1
  x is 0
 
-Interactive TCC works about like Interactive GCC (igcc), which is also included in this package. If you can convert C++ to C, you might even be able to struggle through some of following examples using itcc.
- 
+Interactive TCC works about like the original Interactive GCC (igcc), which is also included in this package. If you can convert C++ to C, you might even be able to struggle through some of following examples using itcc.
+
 Interactive GCC
 ===============
 

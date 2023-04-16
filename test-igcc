@@ -202,7 +202,7 @@ g++> .l
 #include <vector>
 
 int a;
-a += 2;
+    a += 2;
 g++> 
 ''' )
 
@@ -234,9 +234,20 @@ def test_list_full_program():
 g++> a += 2;
 g++> #include <vector>
 g++> .L
-%s
+#include <cstdio>
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+int main(){
+    int a;
+    a += 2;
+    return 0;
+}
+
 g++> 
-''' % libigcc.source_code.get_full_source( fakerunner ) )
+''')
 
 	run_program( commands, expected_output )
 
@@ -404,7 +415,7 @@ g++> a = 5;
 g++> foobar
 [Compile error - type .e to see it.]
 g++> .u
-[Undone 'foobar'.]
+[Undone '    foobar'.]
 g++> cout << a << endl;
 5
 g++> 
@@ -430,9 +441,9 @@ g++> ++a;
 g++> ++a;
 g++> ++a;
 g++> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 g++> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 g++> cout << a << endl;
 6
 g++> 
@@ -456,7 +467,7 @@ def test_undo_before_beginning():
 	expected_output = (
 r'''g++> int a = 5;
 g++> .u
-[Undone 'int a = 5;'.]
+[Undone '    int a = 5;'.]
 g++> .u
 [Nothing to undo.]
 g++> .u
@@ -464,7 +475,7 @@ g++> .u
 g++> cout << a << endl;
 [Compile error - type .e to see it.]
 g++> .u
-[Undone 'cout << a << endl;'.]
+[Undone '    cout << a << endl;'.]
 g++> int b = 7;
 g++> cout << b << endl;
 7
@@ -489,11 +500,11 @@ r'''g++> int a = 5;
 g++> #include <vector>
 g++> ++a;
 g++> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 g++> .u
 [Undone '#include <vector>'.]
 g++> .u
-[Undone 'int a = 5;'.]
+[Undone '    int a = 5;'.]
 g++> 
 ''' )
 
@@ -513,9 +524,9 @@ def test_redo_1():
 r'''g++> int a = 1;
 g++> ++a;
 g++> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 g++> .r
-[Redone '++a;'.]
+[Redone '    ++a;'.]
 g++> cout << a << endl;
 2
 g++> 
@@ -541,13 +552,13 @@ def test_redo_2():
 r'''g++> int a = 1;
 g++> ++a;
 g++> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 g++> .u
-[Undone 'int a = 1;'.]
+[Undone '    int a = 1;'.]
 g++> .r
-[Redone 'int a = 1;'.]
+[Redone '    int a = 1;'.]
 g++> .r
-[Redone '++a;'.]
+[Redone '    ++a;'.]
 g++> cout << a << endl;
 2
 g++> 
@@ -574,15 +585,15 @@ def test_redo_before_beginning():
 r'''g++> int a = 1;
 g++> ++a;
 g++> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 g++> .u
-[Undone 'int a = 1;'.]
+[Undone '    int a = 1;'.]
 g++> .u
 [Nothing to undo.]
 g++> .r
-[Redone 'int a = 1;'.]
+[Redone '    int a = 1;'.]
 g++> .r
-[Redone '++a;'.]
+[Redone '    ++a;'.]
 g++> cout << a << endl;
 2
 g++> 
@@ -606,9 +617,9 @@ def test_redo_after_end():
 r'''g++> int a = 1;
 g++> ++a;
 g++> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 g++> .r
-[Redone '++a;'.]
+[Redone '    ++a;'.]
 g++> .r
 [Nothing to redo.]
 g++> cout << a << endl;
@@ -637,17 +648,17 @@ r'''g++> int a = 5;
 g++> #include <vector>
 g++> ++a;
 g++> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 g++> .u
 [Undone '#include <vector>'.]
 g++> .u
-[Undone 'int a = 5;'.]
+[Undone '    int a = 5;'.]
 g++> .r
-[Redone 'int a = 5;'.]
+[Redone '    int a = 5;'.]
 g++> .r
 [Redone '#include <vector>'.]
 g++> .r
-[Redone '++a;'.]
+[Redone '    ++a;'.]
 g++> 
 ''' )
 
@@ -669,11 +680,11 @@ def test_undo_then_new_commands():
 r'''g++> int a = 5;
 g++> ++a;
 g++> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 g++> --a;
 g++> --a;
 g++> .u
-[Undone '--a;'.]
+[Undone '    --a;'.]
 g++> cout << a << endl;
 4
 g++> 
@@ -697,12 +708,12 @@ r'''g++> int a = 56;
 g++> cout << a << endl;
 56
 g++> .u
-[Undone 'cout << a << endl;'.]
+[Undone '    cout << a << endl;'.]
 g++> .r
-[Redone 'cout << a << endl;'.]
+[Redone '    cout << a << endl;'.]
 56
 g++> .u
-[Undone 'cout << a << endl;'.]
+[Undone '    cout << a << endl;'.]
 g++> cout << 12 << endl;
 12
 g++> 
@@ -765,11 +776,11 @@ def test_undo_stderr_then_new_commands():
 r'''g++> int a = 5;
 g++> ++a;
 g++> .u
-[Undone '++a;'.]
+[Undone '    ++a;'.]
 g++> --a;
 g++> --a;
 g++> .u
-[Undone '--a;'.]
+[Undone '    --a;'.]
 g++> cerr << a << endl;
 4
 g++> 
