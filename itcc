@@ -23,5 +23,5 @@
 import libigcc.runtcc
 
 if __name__ == "__main__":
-	libigcc.runtcc.run()
+    libigcc.runtcc.run()
 

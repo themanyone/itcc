@@ -22,5 +22,5 @@
 import libigcc.run
 
 if __name__ == "__main__":
-	libigcc.run.run()
+    libigcc.run.run()
 

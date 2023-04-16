@@ -22,63 +22,63 @@ from . import copying
 import subprocess
 
 class IGCCQuitException:
-	pass
+    pass
 
 def dot_c( runner ):
-	print(copying.copying)
-	return False, False
+    print(copying.copying)
+    return False, False
 
 def dot_e( runner ):
-	print(runner.compile_error.decode().strip('\n'))
-	return False, False
+    print(runner.compile_error.decode().strip('\n'))
+    return False, False
 
 def dot_q( runner ):
-	raise IGCCQuitException()
+    raise IGCCQuitException()
 
 def dot_l( runner ):
-	print("%s\n\n%s" % ( runner.get_user_includes_string().strip(), runner.get_user_commands_string().strip() ))
-	return False, False
+    print("%s\n\n    %s" % ( runner.get_user_includes_string().strip(), runner.get_user_commands_string().strip() ))
+    return False, False
 
 def dot_L( runner ):
-	print(source_code.get_full_source( runner ))
-	return False, False
+    print(source_code.get_full_source( runner ))
+    return False, False
 
 def dot_r( runner ):
-	redone_line = runner.redo()
-	if redone_line is not None:
-		print("[Redone '%s'.]" % redone_line)
-		return False, True
-	else:
-		print("[Nothing to redo.]")
-		return False, False
-		
+    redone_line = runner.redo()
+    if redone_line is not None:
+        print("[Redone '%s'.]" % redone_line)
+        return False, True
+    else:
+        print("[Nothing to redo.]")
+        return False, False
+        
 
 def dot_u( runner ):
-	undone_line = runner.undo()
-	if undone_line is not None:
-		print("[Undone '%s'.]" % undone_line)
-	else:
-		print("[Nothing to undo.]")
-	return False, False
+    undone_line = runner.undo()
+    if undone_line is not None:
+        print("[Undone '%s'.]" % undone_line)
+    else:
+        print("[Nothing to undo.]")
+    return False, False
 
 def dot_w( runner ):
-	print(copying.warranty)
-	return False, False
+    print(copying.warranty)
+    return False, False
 
 dot_commands = {
-	".c" : ( "Show copying information", dot_c ),
-	".e" : ( "Show the last compile errors/warnings", dot_e ),
-	".h" : ( "Show this help message", None ),
-	".q" : ( "Quit", dot_q ),
-	".l" : ( "List the code you have entered", dot_l ),
-	".L" : ( "List the whole program as given to the compiler", dot_L ),
-	".r" : ( "Redo undone command", dot_r ),
-	".u" : ( "Undo previous command", dot_u ),
-	".w" : ( "Show warranty information", dot_w ),
-	}
+    ".c" : ( "Show copying information", dot_c ),
+    ".e" : ( "Show the last compile errors/warnings", dot_e ),
+    ".h" : ( "Show this help message", None ),
+    ".q" : ( "Quit", dot_q ),
+    ".l" : ( "List the code you have entered", dot_l ),
+    ".L" : ( "List the whole program as given to the compiler", dot_L ),
+    ".r" : ( "Redo undone command", dot_r ),
+    ".u" : ( "Undo previous command", dot_u ),
+    ".w" : ( "Show warranty information", dot_w ),
+    }
 
 def case_insensitive_string_compare( str1, str2 ):
-	return cmp( str1.lower(), str2.lower() )
+    return cmp( str1.lower(), str2.lower() )
 
 def dot_h( runner ):
     for cmd in sorted( dot_commands.keys()):
@@ -86,16 +86,16 @@ def dot_h( runner ):
     return False, False
 
 def process( inp, runner ):
-	if inp == ".h":
-		return dot_h( runner )
-	elif inp[:3] == ".h ":
-		run_process = subprocess.Popen(["man", "-Hxdg-open", "3.", inp[3:]],
-		stdout = subprocess.PIPE, stderr = subprocess.PIPE )
-		stdout, stderr = run_process.communicate()
-		return False, False
-	for cmd in sorted( dot_commands.keys() ):
-		if inp == cmd:
-			return dot_commands[cmd][1]( runner )
+    if inp == ".h":
+        return dot_h( runner )
+    elif inp[:3] == ".h ":
+        run_process = subprocess.Popen(["man", "-Hxdg-open", "3.", inp[3:]],
+        stdout = subprocess.PIPE, stderr = subprocess.PIPE )
+        stdout, stderr = run_process.communicate()
+        return False, False
+    for cmd in sorted( dot_commands.keys() ):
+        if inp == cmd:
+            return dot_commands[cmd][1]( runner )
 
-	return True, True
+    return True, True
 

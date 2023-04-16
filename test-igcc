@@ -201,7 +201,7 @@ g++> #include <vector>
 g++> .l
 #include <vector>
 
-int a;
+    int a;
     a += 2;
 g++> 
 ''' )

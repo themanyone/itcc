@@ -200,7 +200,7 @@ tcc> #include <wctype.h>
 tcc> .l
 #include <wctype.h>
 
-int a;
+    int a;
     a += 2;
 tcc> 
 ''' )
