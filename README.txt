@@ -3,14 +3,14 @@ Interactive TCC
 
 A real-eval-print loop (REPL) for C/C++ programmers, written in Python.
 
-Interactive TCC (itcc) is a python3 fork of Interactive GCC (igcc) https://codeberg.org/andybalaam/igcc with TCC compiler option.
+Interactive TCC (itcc) is a python3 fork of Interactive GCC (igcc) with TCC compiler option. Get it from GitHub https://github.com/themanyone/itcc
 
 Get optional TCC compiler here:
  git clone https://repo.or.cz/tinycc.git/
 
 The advantage of using TCC is speed. There are no compiler delays between entering code and seeing the results! But it lacks some of the functionality of GCC. Also, TCC is a C compiler, not a C++ compiler like GCC.
 
-Use Interactive TCC for C programming, like this:
+Use the Interactive TCC shell, like this:
 
  $ ./itcc
  tcc> int a = 5;
@@ -56,7 +56,7 @@ Use Interactive GCC for C++ programming, like this:
  g++> --a;
  g++> cout << a << endl;
  6
- g++> 
+ g++> |
 
 It is possible to include header files you need like this:
 
@@ -69,7 +69,7 @@ It is possible to include header files you need like this:
  g++> myvec.push_back( 21 );
  g++> printf( "%d\n", myvec.size() );
  2
- g++> 
+ g++> |
 
 Compile errors can be tolerated until the code works:
 
@@ -98,7 +98,7 @@ Extra include directories can be supplied:
  g++> #include "world.h"
  g++> world();
  world!
- g++> 
+ g++> |
 
 Libs can be linked:
 
@@ -106,7 +106,7 @@ Libs can be linked:
  g++> #include "math.h"
  g++> cout << pow( 3, 3 ) << endl; // Actually a bad example since libm.a is already linked in C++
  27
- g++> 
+ g++> |
 
 Your own libs can be linked too:
 
@@ -114,14 +114,15 @@ Your own libs can be linked too:
  g++> #include "mylib.h"
  g++> defined_in_cpp();
  defined_in_cpp saying hello.
- g++> 
+ g++> |
 
 The cstdio, iostream and string headers are automatically included, and the std namespace is automatically in scope.
 
 Downloading and using
 ---------------------
+itcc is published on GitHub. Get it from https://github.com/themanyone/itcc
 
-Download the IGCC tarball from the Sourceforge download area:
+For Python2, you may opt to download Andy Balaam's original IGCC tarball from the Sourceforge download area:
 
 https://sourceforge.net/projects/igcc/files/
 
@@ -151,11 +152,11 @@ IGCC is a small python wrapper around GCC.
 
 Check out the code here:
 
- git clone git://igcc.git.sourceforge.net/gitroot/igcc/igcc
+ git clone https://github.com/themanyone/itcc.git
 
 Or browse the source here:
 
-http://igcc.git.sourceforge.net/git/gitweb.cgi?p=igcc/igcc;a=tree
+https://github.com/themanyone/itcc
 
 Links
 -----
