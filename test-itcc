@@ -270,7 +270,7 @@ def test_quit():
 def test_welcome_message():
 	commands = []
 	expected_output = (
-'''igcc $version
+'''itcc $version
 Released under GNU GPL version 2 or later, with NO WARRANTY.
 Type ".h" for help.
 

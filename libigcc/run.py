@@ -96,7 +96,7 @@ def get_compiler_command( options, outfilename ):
 
 
 def run_compile( subs_compiler_command, runner ):
-    #print "$ " + ( " ".join( subs_compiler_command ) )
+    # print("$ " + ( " ".join( subs_compiler_command ) ))
     compile_process = subprocess.Popen( subs_compiler_command,
         stdin = subprocess.PIPE, stderr = subprocess.PIPE )
     stdoutdata, stderrdata = compile_process.communicate(

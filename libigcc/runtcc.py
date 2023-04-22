@@ -97,7 +97,7 @@ def get_compiler_command( options, outfilename ):
 
 
 def run_compile( subs_compiler_command, runner ):
-    #print "$ " + ( " ".join( subs_compiler_command ) )
+    # print("$ " + ( " ".join( subs_compiler_command ) ))
     compile_process = subprocess.Popen( subs_compiler_command,
         stdin = subprocess.PIPE, stderr = subprocess.PIPE )
     stdoutdata, stderrdata = compile_process.communicate(
@@ -123,7 +123,7 @@ def run_exe( exefilename ):
     return run_process.communicate()
 
 def print_welcome():
-    print('''igcc $version
+    print('''itcc $version
 Released under GNU GPL version 2 or later, with NO WARRANTY.
 Type ".h" for help.
 '''.replace( "$version", version.VERSION ))

@@ -132,7 +132,7 @@ def run_exe( exefilename ):
     return run_process.communicate()
 
 def print_welcome():
-    print('''igcc $version
+    print('''icrap $version
 Released under GNU GPL version 2 or later, with NO WARRANTY.
 Type ".h" for help.
 '''.replace( "$version", version.VERSION ))
