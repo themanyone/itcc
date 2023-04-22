@@ -21,21 +21,24 @@ Use Interactive TCC for C programming, like this:
  ['-:17: error: identifier expected']
  tcc> }
  a is 3
+ tcc> |
 
 Ignore errors. The result is printed after typing the closing brace "}".
 
-Tired of typing all those semicolons, curly braces, and parenthesis? Crap coding is also supported. Crap is a light-weight wrapper around standard C code. https://themanyone.github.io/crap/
+Tired of typing all those semicolons, curly braces, and parenthesis? Want to indent instead, like Python? Crap coding is also supported. Crap is a light-weight wrapper around standard C code. And since braces are added automatically, there are fewer errors. Get crap from https://themanyone.github.io/crap/
 
- $ ./icrap
- crap> puts  "hi"
- hi
- crap> for  int x=3;x--;
- crap>     printf  "x is %i\n", x
- x is 2
- x is 1
- x is 0
+ $ ./icrap -lm
+ crap> #include "math.h"
+ crap> for  int x=0;x<5;x++
+ crap>      printf  "%i squared is %0.0f\n", x, pow(x, 2.0)
+ 0 squared is 0
+ 1 squared is 1
+ 2 squared is 4
+ 3 squared is 9
+ 4 squared is 16
+ crap> |
 
-Interactive TCC works about like the original Interactive GCC (igcc), which is also included in this package. If you can convert C++ to C, you might even be able to struggle through some of following examples using itcc.
+Interactive TCC works about like the original Interactive GCC (igcc), which is also included in this package. If you can convert C++ to C, you might even be able to struggle through some of following examples using itcc or icrap.
 
 Interactive GCC
 ===============
