@@ -1,11 +1,11 @@
 Interactive TCC
 ===============
 
-A real-eval-print loop (REPL) for C/C++ programmers, written in Python.
+A read-eval-print loop (REPL) for C/C++ programmers, written in Python.
 
 Interactive TCC (itcc) is a python3 fork of Interactive GCC (igcc) with TCC compiler option. Get it from GitHub https://github.com/themanyone/itcc
 
-Get optional TCC compiler here:
+Get TCC compiler here:
  git clone https://repo.or.cz/tinycc.git/
 
 The advantage of using TCC is speed. There are no compiler delays between entering code and seeing the results! But it lacks some of the functionality of GCC. Also, TCC is a C compiler, not a C++ compiler like GCC.
@@ -28,7 +28,7 @@ Ignore errors. The result is printed after typing the closing brace "}".
 Interactive Crap
 ================
 
-Tired of typing all those semicolons, curly braces, and parenthesis? Want to indent instead, like Python but still produce valid C code? Crap coding is also supported. Crap is a light-weight wrapper around standard C. And since braces are added automatically, there are fewer errors. Get crap from https://themanyone.github.io/crap/
+Tired of typing all those semicolons, curly braces, and parenthesis? Want to indent instead, like Python but still produce valid C code? Crap coding is also supported. Crap is a light-weight wrapper around standard C. And since braces are added automatically, there might be fewer errors. Get crap from https://themanyone.github.io/crap/
 
  $ ./icrap -lm
  crap> #include "math.h"
@@ -41,7 +41,7 @@ Tired of typing all those semicolons, curly braces, and parenthesis? Want to ind
  4 squared is 16
  crap> |
 
-Interactive TCC works about like the original Interactive GCC (igcc), which is also included in this package. If you can convert C++ to C, you might even be able to struggle through some of following examples using itcc or icrap.
+Interactive TCC works about like the original Interactive GCC (igcc), which is also included in this package. If you can convert C++ to C, you might even be able to struggle through some of following examples using itcc, or icrap.
 
 Interactive GCC
 ===============
@@ -117,6 +117,13 @@ Your own libs can be linked too:
  g++> |
 
 The cstdio, iostream and string headers are automatically included, and the std namespace is automatically in scope.
+
+FAQ. Issues.
+============
+
+How does it work? Does it re-run the entire code block each time?
+
+Yes. Although it runs all the code each time, it only prints the new output. Supposedly. There appears to be some bugs with detecting what was already printed, causing some new lines to produce no output. In that case, just restart it. We're working on that...
 
 Downloading and using
 ---------------------
