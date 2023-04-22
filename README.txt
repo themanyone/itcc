@@ -25,7 +25,10 @@ Use Interactive TCC for C programming, like this:
 
 Ignore errors. The result is printed after typing the closing brace "}".
 
-Tired of typing all those semicolons, curly braces, and parenthesis? Want to indent instead, like Python? Crap coding is also supported. Crap is a light-weight wrapper around standard C code. And since braces are added automatically, there are fewer errors. Get crap from https://themanyone.github.io/crap/
+Interactive Crap
+================
+
+Tired of typing all those semicolons, curly braces, and parenthesis? Want to indent instead, like Python but still produce valid C code? Crap coding is also supported. Crap is a light-weight wrapper around standard C. And since braces are added automatically, there are fewer errors. Get crap from https://themanyone.github.io/crap/
 
  $ ./icrap -lm
  crap> #include "math.h"
