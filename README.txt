@@ -196,3 +196,4 @@ IGCC comes with NO WARRANTY.
 
 See the file COPYING for more information.
 
+This fork may contain modifications which are Copyright (C) 2023 by Henry Kroll III under the same license. Blame him if there are problems with these updates. Issues for this fork are maintained on GitHub.
