@@ -40,7 +40,9 @@ def dot_l( runner ):
     return False, False
 
 def dot_L( runner ):
-    print(source_code.get_full_source( runner ))
+    # print(source_code.get_full_source( runner ))
+    with open('/tmp/crap_code.c', 'r') as file:
+        print(file.read())
     return False, False
 
 def dot_r( runner ):
@@ -71,7 +73,7 @@ dot_commands = {
     ".h" : ( "Show this help message", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
-    ".L" : ( "List the whole program as given to the compiler", dot_L ),
+    ".L" : ( "List the C program as given to the compiler", dot_L ),
     ".r" : ( "Redo undone command", dot_r ),
     ".u" : ( "Undo previous command", dot_u ),
     ".w" : ( "Show warranty information", dot_w ),

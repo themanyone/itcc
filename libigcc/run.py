@@ -1,6 +1,7 @@
 # igcc - a read-eval-print loop for C/C++ programmers
 #
 # Copyright (C) 2009 Andy Balaam
+# with python3 and tcc support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -25,6 +26,7 @@ import readline
 import subprocess
 import sys
 import tempfile
+from contextlib import redirect_stdout
 from optparse import OptionParser
 
 from . import dot_commands
@@ -36,7 +38,7 @@ from . import version
 # One day these will be in a config file
 
 prompt = "g++> "
-compiler_command = ( "g++", "-o0", "-x", "c++", "-o", "$outfile", "-",
+compiler_command = ( "g++", "-std=c++17", "-o0", "-x", "c++", "-o", "$outfile", "-",
     "$include_dirs", "$lib_dirs", "$libs" )
 
 include_dir_command = ( "-I$cmd", )
@@ -114,7 +116,6 @@ def run_compile( subs_compiler_command, runner ):
             return stderrdata
         else:
             return "Unknown compile error - compiler did not write any output."
-        
 
 def run_exe( exefilename ):
     run_process = subprocess.Popen( exefilename,
@@ -192,8 +193,8 @@ class Runner:
                         self )
 
                     if self.compile_error is not None:
-                        print("[Compile error - type .e to see it.]")
-                        # print(self.compile_error.decode())
+                        # print("[Compile error - type .e to see it.]")
+                        print(self.compile_error.decode().strip('\n'))
                     else:
                         stdoutdata, stderrdata = run_exe( self.exefilename )
 
@@ -252,7 +253,7 @@ class Runner:
 
 def parse_args( argv ):
     parser = OptionParser( version="igcc " + version.VERSION )
-            
+
     parser.add_option( "-I", "", dest="INCLUDE", action="append",
         help = "Add INCLUDE to the list of directories to " +
             "be searched for header files." )
@@ -261,7 +262,10 @@ def parse_args( argv ):
             "be searched for library files." )
     parser.add_option( "-l", "", dest="LIB", action="append",
         help = "Search the library LIB when linking." )
-        
+    parser.add_option( "-p", "", dest="INCLUDE", action="append",
+        help = "Extra compiler args like -pthread." )
+    parser.add_option( "-s", "", dest="INCLUDE", action="append",
+        help = "Extra compiler args like -std=c99." )
     (options, args) = parser.parse_args( argv )
 
     if len( args ) > 0:
@@ -272,29 +276,22 @@ def parse_args( argv ):
 
 def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
         argv = None ):
-
-    # TODO: replace try...finally with a "with" statement
-    real_sys_stdout = sys.stdout
-    sys.stdout = outputfile
-
     exefilename = ""
 
-    try:
+    # Use a with statement block to redirect sys.stdout
+    with redirect_stdout(outputfile):
         try:
-            options = parse_args( argv )
+            options = parse_args(argv)
 
             exefilename = get_temporary_file_name()
             ret = "normal"
             if print_welc:
                 print_welcome()
-            Runner( options, inputfile, exefilename ).do_run()
+            Runner(options, inputfile, exefilename).do_run()
         except:
             ret = "quit"
-    finally:
-        sys.stdout = real_sys_stdout
 
-        if os.path.isfile( exefilename ):
-            os.remove( exefilename )
+    if os.path.isfile(exefilename):
+        os.remove(exefilename)
 
     return ret
-

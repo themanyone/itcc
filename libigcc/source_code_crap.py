@@ -1,4 +1,4 @@
-# igcc - a read-eval-print loop for C/C++ programmers
+# icrap - a read-eval-print loop for C/C++ programmers
 #
 # Copyright (C) 2009 Andy Balaam
 #
@@ -21,13 +21,11 @@ file_boilerplate = """#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 $user_includes
-int main(){
-$user_commands    return 0;
-}
-"""
+int main()
+    /* main code section */
+$user_commands    return 0"""
 def get_full_source( runner ):
     return ( file_boilerplate
         .replace( "$user_commands", runner.get_user_commands_string() )
         .replace( "$user_includes", runner.get_user_includes_string() )
-        )
-
+    )

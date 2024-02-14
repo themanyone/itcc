@@ -26,6 +26,7 @@ import readline
 import subprocess
 import sys
 import tempfile
+from contextlib import redirect_stdout
 from optparse import OptionParser
 
 from . import dot_commands_c as dot_commands
@@ -70,7 +71,7 @@ def create_read_line_function( inputfile, prompt ):
         return lambda: read_line_from_file( inputfile, prompt )
 
 def get_temporary_file_name():
-    outfile = tempfile.NamedTemporaryFile( prefix = 'igcc-exe' )
+    outfile = tempfile.NamedTemporaryFile( prefix = 'itcc-exe' )
     outfilename = outfile.name
     outfile.close()
     return outfilename
@@ -95,7 +96,6 @@ def get_compiler_command( options, outfilename ):
             ret.append( part.replace( "$outfile", outfilename ) )
     return ret
 
-
 def run_compile( subs_compiler_command, runner ):
     # print("$ " + ( " ".join( subs_compiler_command ) ))
     compile_process = subprocess.Popen( subs_compiler_command,
@@ -115,7 +115,6 @@ def run_compile( subs_compiler_command, runner ):
             return stderrdata
         else:
             return "Unknown compile error - compiler did not write any output."
-        
 
 def run_exe( exefilename ):
     run_process = subprocess.Popen( exefilename,
@@ -252,8 +251,8 @@ class Runner:
         return "\n".join( self.get_user_includes() ) + "\n"
 
 def parse_args( argv ):
-    parser = OptionParser( version="igcc " + version.VERSION )
-            
+    parser = OptionParser( version="itcc " + version.VERSION )
+
     parser.add_option( "-I", "", dest="INCLUDE", action="append",
         help = "Add INCLUDE to the list of directories to " +
             "be searched for header files." )
@@ -262,7 +261,10 @@ def parse_args( argv ):
             "be searched for library files." )
     parser.add_option( "-l", "", dest="LIB", action="append",
         help = "Search the library LIB when linking." )
-        
+    parser.add_option( "-p", "", dest="INCLUDE", action="append",
+        help = "Extra compiler args like -pthread." )
+    parser.add_option( "-s", "", dest="INCLUDE", action="append",
+        help = "Extra compiler args like -std=c99." )
     (options, args) = parser.parse_args( argv )
 
     if len( args ) > 0:
@@ -273,29 +275,22 @@ def parse_args( argv ):
 
 def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
         argv = None ):
-
-    # TODO: replace try...finally with a "with" statement
-    real_sys_stdout = sys.stdout
-    sys.stdout = outputfile
-
     exefilename = ""
 
-    try:
+    # Use a with statement block to redirect sys.stdout
+    with redirect_stdout(outputfile):
         try:
-            options = parse_args( argv )
+            options = parse_args(argv)
 
             exefilename = get_temporary_file_name()
             ret = "normal"
             if print_welc:
                 print_welcome()
-            Runner( options, inputfile, exefilename ).do_run()
+            Runner(options, inputfile, exefilename).do_run()
         except:
             ret = "quit"
-    finally:
-        sys.stdout = real_sys_stdout
 
-        if os.path.isfile( exefilename ):
-            os.remove( exefilename )
+    if os.path.isfile(exefilename):
+        os.remove(exefilename)
 
     return ret
-
