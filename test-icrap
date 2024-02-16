@@ -137,12 +137,12 @@ def test_compile_error_display():
 
 	# Just look for a string "xpected" in the compiler output.
 	expected_output_re = (
-'''crap> tint a
--:8: error: 'tint' undeclared
+re.escape('''crap> tint a
+[Compile error - type .e to see it.]
 crap> .e
 -:8: error: 'tint' undeclared
 crap> 
-''' )
+''' ))
 
 	run_program_regex_output( commands, expected_output_re )
 
@@ -411,7 +411,7 @@ def test_undo_1():
 r'''crap> int a;
 crap> a = 5;
 crap> foobar
--:10: error: 'foobar' undeclared
+[Compile error - type .e to see it.]
 crap> .u
 [Undone '    foobar'.]
 crap> printf("%i\n",a);
@@ -471,7 +471,7 @@ crap> .u
 crap> .u
 [Nothing to undo.]
 crap> printf("%i\n",a);
--:8: error: 'a' undeclared
+[Compile error - type .e to see it.]
 crap> .u
 [Undone '    printf("%i\n",a);'.]
 crap> int b = 7;

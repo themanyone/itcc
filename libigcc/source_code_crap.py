@@ -1,6 +1,7 @@
 # icrap - a read-eval-print loop for C/C++ programmers
 #
 # Copyright (C) 2009 Andy Balaam
+# with python3 and crap support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License

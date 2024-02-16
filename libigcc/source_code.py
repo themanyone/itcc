@@ -1,6 +1,7 @@
 # igcc - a read-eval-print loop for C/C++ programmers
 #
 # Copyright (C) 2009 Andy Balaam
+# with python3 updates by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,7 +23,7 @@ file_boilerplate = """#include <cstdio>
 #include <string>
 $user_includes
 using namespace std;
-int main(){
+int main(int argc, char **argv, char **env){
 $user_commands    return 0;
 }"""
 

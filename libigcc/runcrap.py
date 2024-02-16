@@ -220,14 +220,16 @@ class Runner:
                         self )
 
                     if self.compile_error is not None:
-                        # print("[Compile error - type .e to see it.]")
-                        print(self.compile_error.decode().strip('\n'))
+                        if self.options.v > 1:
+                            print(self.compile_error.decode().strip('\n'))
+                        else:
+                            print("[Compile error - type .e to see it.]")
                     else:
                         if self.options.v > 0:
                             print("session_args:", *session_args)
                         stdoutdata, stderrdata = run_exe( self.exefilename,
                             session_args )
-    
+
                         if len( stdoutdata ) > self.output_chars_printed:
                             new_output = stdoutdata[self.output_chars_printed:]
                             len_new_output = len( new_output )

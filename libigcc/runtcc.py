@@ -27,7 +27,7 @@ import subprocess
 import sys
 import tempfile
 from contextlib import redirect_stdout
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 from . import dot_commands_c as dot_commands
 from . import source_code_c as source_code
@@ -83,9 +83,12 @@ def append_multiple( single_cmd, cmdlist, ret ):
                 ret.append(
                     cmd_part.replace( "$cmd" , cmd ) )
 
-def get_compiler_command( options, outfilename ):
+def get_compiler_command( options, extra_options, outfilename ):
     ret = []
+
     for part in compiler_command:
+        if part == "-o":
+            append_multiple( extra_options, ["-o"], ret)
         if part == "$include_dirs":
             append_multiple( include_dir_command, options.INCLUDE, ret )
         elif part == "$lib_dirs":
@@ -94,7 +97,9 @@ def get_compiler_command( options, outfilename ):
             append_multiple( lib_command, options.LIB, ret )
         else:
             ret.append( part.replace( "$outfile", outfilename ) )
+
     return ret
+
 
 def run_compile( subs_compiler_command, runner ):
     # print("$ " + ( " ".join( subs_compiler_command ) ))
@@ -116,8 +121,8 @@ def run_compile( subs_compiler_command, runner ):
         else:
             return "Unknown compile error - compiler did not write any output."
 
-def run_exe( exefilename ):
-    run_process = subprocess.Popen( exefilename,
+def run_exe( exefilename, extra_args ):
+    run_process = subprocess.Popen([ exefilename, *extra_args],
         stdout = subprocess.PIPE, stderr = subprocess.PIPE )
     return run_process.communicate()
 
@@ -153,8 +158,9 @@ class UserInput:
 
 class Runner:
 
-    def __init__( self, options, inputfile, exefilename ):
+    def __init__( self, options, extra_options, inputfile, exefilename ):
         self.options = options
+        self.extra_options = extra_options
         self.inputfile = inputfile
         self.exefilename = exefilename
         self.user_input = []
@@ -163,10 +169,11 @@ class Runner:
         self.output_chars_printed = 0
         self.error_chars_printed = 0
 
-    def do_run( self ):
+    def do_run( self, session_args ):
         read_line = create_read_line_function( self.inputfile, prompt )
-
-        subs_compiler_command = get_compiler_command( self.options, self.exefilename )
+    
+        subs_compiler_command = get_compiler_command(
+            self.options, self.extra_options, self.exefilename )
 
         inp = 1
         while inp is not None:
@@ -188,15 +195,23 @@ class Runner:
                     self.input_num += 1
 
                 if run_cmp:
+                    # print compiler command
+                    if self.options.v > 1:
+                        print("$ " + ( " ".join( subs_compiler_command ) ))
                     self.compile_error = run_compile( subs_compiler_command,
                         self )
 
                     if self.compile_error is not None:
-                        # print("[Compile error - type .e to see it.]")
-                        print(self.compile_error.decode().strip('\n'))
+                        if self.options.v > 1:
+                            print(self.compile_error.decode().strip('\n'))
+                        else:
+                            print("[Compile error - type .e to see it.]")
                     else:
-                        stdoutdata, stderrdata = run_exe( self.exefilename )
-
+                        if self.options.v > 0:
+                            print("session_args:", *session_args)
+                        stdoutdata, stderrdata = run_exe( self.exefilename,
+                            session_args )
+    
                         if len( stdoutdata ) > self.output_chars_printed:
                             new_output = stdoutdata[self.output_chars_printed:]
                             len_new_output = len( new_output )
@@ -251,27 +266,34 @@ class Runner:
         return "\n".join( self.get_user_includes() ) + "\n"
 
 def parse_args( argv ):
-    parser = OptionParser( version="itcc " + version.VERSION )
-
-    parser.add_option( "-I", "", dest="INCLUDE", action="append",
+    parser = ArgumentParser()
+    parser.description =\
+        "Run an interactive C live coding session."
+    parser.add_argument( "-v", action="count", default=0,
+        help = "Increase verbosity." )
+    parser.add_argument( "-I", dest="INCLUDE", action="append",
         help = "Add INCLUDE to the list of directories to " +
             "be searched for header files." )
-    parser.add_option( "-L", "", dest="LIBDIR", action="append",
+    parser.add_argument( "-L", dest="LIBDIR", action="append",
         help = "Add LIBDIR to the list of directories to " +
             "be searched for library files." )
-    parser.add_option( "-l", "", dest="LIB", action="append",
+    parser.add_argument( "-l", dest="LIB", action="append",
         help = "Search the library LIB when linking." )
-    parser.add_option( "-p", "", dest="INCLUDE", action="append",
-        help = "Extra compiler args like -pthread." )
-    parser.add_option( "-s", "", dest="INCLUDE", action="append",
-        help = "Extra compiler args like -std=c99." )
-    (options, args) = parser.parse_args( argv )
+    parser.add_argument( "-compiler_args", action="store_true",
+        help = "Any compiler args can go here.")
+    parser.add_argument( "--", nargs="+", dest="session_args",
+         help="After -- args go into my interactive session's argv[].");
 
-    if len( args ) > 0:
-        parser.error( "Unrecognised arguments :" +
-            " ".join( arg for arg in args ) )
+    options, args = parser.parse_known_args(argv)
 
-    return options
+    # Separate args and compiler args
+    # We could have argparse do this but the help output is confusing.
+    separator_index = args.index('--') \
+        if '--' in args else len(args)
+    extra_compiler_args = args[:separator_index]
+    session_args = args[separator_index + 1:]
+
+    return options, extra_compiler_args, session_args
 
 def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
         argv = None ):
@@ -280,14 +302,16 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
     # Use a with statement block to redirect sys.stdout
     with redirect_stdout(outputfile):
         try:
-            options = parse_args(argv)
+            options, extra_args, session_args = parse_args(argv)
 
             exefilename = get_temporary_file_name()
             ret = "normal"
             if print_welc:
                 print_welcome()
-            Runner(options, inputfile, exefilename).do_run()
-        except:
+            Runner(options, extra_args, inputfile, exefilename).do_run(session_args)
+        except Exception as e:
+            if hasattr(e, '__len__'):
+                print(e)
             ret = "quit"
 
     if os.path.isfile(exefilename):

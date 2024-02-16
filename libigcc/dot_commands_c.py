@@ -1,4 +1,4 @@
-# igcc - a read-eval-print loop for C/C++ programmers
+# itcc - a read-eval-print loop for C/C++ programmers
 #
 # Copyright (C) 2009 Andy Balaam
 #

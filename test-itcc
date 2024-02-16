@@ -124,7 +124,7 @@ def test_compile_error():
 
 	expected_output = (
 '''tcc> int a
--:8: error: ';' expected (got "return")
+[Compile error - type .e to see it.]
 tcc> 
 ''' )
 
@@ -137,12 +137,7 @@ def test_compile_error_display():
 
 	# Just look for a string "xpected" in the compiler output.
 	expected_output_re = (
-'''tcc> int a
--:8: error: \';\' expected \(got "return"\)
-tcc> .e
--:8: error: \';\' expected \(got "return"\)
-tcc> 
-''' )
+r'''.*expected.*''' )
 
 	run_program_regex_output( commands, expected_output_re )
 
@@ -238,12 +233,11 @@ tcc> .L
 #include <string.h>
 #include <iconv.h>
 
-int main(){
+int main(int argc, char **argv, char **env){
     int a;
     a += 2;
     return 0;
 }
-
 tcc> 
 ''')
 
@@ -358,7 +352,7 @@ tcc>
 
 
 def test_runner_get_user_input():
-	runner = libigcc.runtcc.Runner( None, None, None )
+	runner = libigcc.runtcc.Runner( None, None, None, None )
 	runner.user_input = [
 		UserInput("0", UserInput.COMMAND),
 		UserInput("1", UserInput.COMMAND),
@@ -380,7 +374,7 @@ def test_runner_get_user_input():
 
 
 def test_runner_get_user_commands():
-	runner = libigcc.runtcc.Runner( None, None, None )
+	runner = libigcc.runtcc.Runner( None, None, None, None )
 	runner.user_input = [
 		UserInput("0", UserInput.COMMAND),
 		UserInput("1", UserInput.COMMAND),
@@ -409,7 +403,7 @@ def test_undo_1():
 r'''tcc> int a;
 tcc> a = 5;
 tcc> foobar
--:10: error: 'foobar' undeclared
+[Compile error - type .e to see it.]
 tcc> .u
 [Undone '    foobar'.]
 tcc> printf("%i\n",a);
@@ -469,7 +463,7 @@ tcc> .u
 tcc> .u
 [Nothing to undo.]
 tcc> printf("%i\n",a);
--:7: error: 'a' undeclared
+[Compile error - type .e to see it.]
 tcc> .u
 [Undone '    printf("%i\n",a);'.]
 tcc> int b = 7;

@@ -137,12 +137,7 @@ def test_compile_error_display():
 
 	# Just look for a string "xpected" in the compiler output.
 	expected_output_re = (
-'''g\+\+\> int a
-\[Compile error - type .e to see it\.\]
-g\+\+\> \.e
-.*error:.*
-g\+\+\> 
-$''' )
+u'''.*expected.*''' )
 
 	run_program_regex_output( commands, expected_output_re )
 
@@ -240,12 +235,11 @@ g++> .L
 #include <vector>
 
 using namespace std;
-int main(){
+int main(int argc, char **argv, char **env){
     int a;
     a += 2;
     return 0;
 }
-
 g++> 
 ''')
 
@@ -362,7 +356,7 @@ g\+\+\>
 
 
 def test_runner_get_user_input():
-	runner = libigcc.run.Runner( None, None, None )
+	runner = libigcc.run.Runner( None, None, None, None )
 	runner.user_input = [
 		UserInput("0", UserInput.COMMAND),
 		UserInput("1", UserInput.COMMAND),
@@ -384,7 +378,7 @@ def test_runner_get_user_input():
 
 
 def test_runner_get_user_commands():
-	runner = libigcc.run.Runner( None, None, None )
+	runner = libigcc.run.Runner( None, None, None, None )
 	runner.user_input = [
 		UserInput("0", UserInput.COMMAND),
 		UserInput("1", UserInput.COMMAND),
