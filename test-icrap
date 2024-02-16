@@ -78,6 +78,11 @@ def run_program_regex_output( commands, expected_output_re ):
 
 	assert_strings_match( "".join( outputfile.lines ), expected_output_re )
 
+def test_print_argv():
+    commands = [ "puts(argv[1]);" ]
+    expected_output = 'crap> puts(argv[1]);\nfoo\ncrap> \n'
+    run_program( commands, expected_output, False, ['--', 'foo'] )
+
 def test_declare_var():
 	commands = [ "int a;" ]
 	expected_output = 'crap> int a;\ncrap> \n'
@@ -788,6 +793,7 @@ crap>
 
 
 def main():
+	test_print_argv()
 	test_declare_var()
 	test_declare_var_assign()
 	test_declare_and_assign_var_then_print()

@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-# igcc - a read-eval-print loop for C/C++ programmers
+# itcc - a read-eval-print loop for C/C++ programmers
 #
 # Copyright (C) 2009 Andy Balaam
+# with python3 and tcc support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -76,6 +77,11 @@ def run_program_regex_output( commands, expected_output_re ):
 	libigcc.runtcc.run( outputfile, stdinfile, False )
 
 	assert_strings_match( "".join( outputfile.lines ), expected_output_re )
+
+def test_print_argv():
+    commands = [ "puts(argv[1]);" ]
+    expected_output = 'tcc> puts(argv[1]);\nfoo\ntcc> \n'
+    run_program( commands, expected_output, False, ['--', 'foo'] )
 
 def test_declare_var():
 	commands = [ "int a;" ]
@@ -780,6 +786,7 @@ tcc>
 
 
 def main():
+	test_print_argv()
 	test_declare_var()
 	test_declare_var_assign()
 	test_declare_and_assign_var_then_print()
