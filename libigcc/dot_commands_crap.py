@@ -20,8 +20,9 @@
 from . import source_code_crap as source_code
 from . import copying
 import subprocess
+import os
 
-class IGCCQuitException:
+class IGCCQuitException(Exception):
     pass
 
 def dot_c( runner ):
@@ -41,8 +42,10 @@ def dot_l( runner ):
 
 def dot_L( runner ):
     # print(source_code.get_full_source( runner ))
-    with open('/tmp/crap_code.c', 'r') as file:
-        print(file.read())
+    f = '/tmp/crap_code.c'
+    if os.path.isfile(f):
+        with open(f, 'r') as file:
+            print(file.read())
     return False, False
 
 def dot_r( runner ):

@@ -138,9 +138,9 @@ def test_compile_error_display():
 	# Just look for a string "xpected" in the compiler output.
 	expected_output_re = (
 '''crap> tint a
--:7: error: 'tint' undeclared
+-:8: error: 'tint' undeclared
 crap> .e
--:7: error: 'tint' undeclared
+-:8: error: 'tint' undeclared
 crap> 
 ''' )
 
@@ -238,10 +238,12 @@ crap> .L
 #include <string.h>
 #include <iconv.h>
 
-int main(){
+int main(int argc, char **argv, char **env){
+    /* main code section */
     int a;
     a += 2;
     return 0;
+    
 }
 
 crap> 
@@ -358,7 +360,7 @@ crap>
 
 
 def test_runner_get_user_input():
-	runner = libigcc.runcrap.Runner( None, None, None )
+	runner = libigcc.runcrap.Runner( None, None, None, None )
 	runner.user_input = [
 		UserInput("0", UserInput.COMMAND),
 		UserInput("1", UserInput.COMMAND),
@@ -380,7 +382,7 @@ def test_runner_get_user_input():
 
 
 def test_runner_get_user_commands():
-	runner = libigcc.runcrap.Runner( None, None, None )
+	runner = libigcc.runcrap.Runner( None, None, None, None )
 	runner.user_input = [
 		UserInput("0", UserInput.COMMAND),
 		UserInput("1", UserInput.COMMAND),
@@ -409,7 +411,7 @@ def test_undo_1():
 r'''crap> int a;
 crap> a = 5;
 crap> foobar
--:9: error: 'foobar' undeclared
+-:10: error: 'foobar' undeclared
 crap> .u
 [Undone '    foobar'.]
 crap> printf("%i\n",a);
@@ -469,7 +471,7 @@ crap> .u
 crap> .u
 [Nothing to undo.]
 crap> printf("%i\n",a);
--:7: error: 'a' undeclared
+-:8: error: 'a' undeclared
 crap> .u
 [Undone '    printf("%i\n",a);'.]
 crap> int b = 7;

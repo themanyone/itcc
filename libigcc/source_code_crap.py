@@ -21,7 +21,7 @@ file_boilerplate = """#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 $user_includes
-int main()
+int main(int argc, char **argv, char **env)
     /* main code section */
 $user_commands    return 0"""
 def get_full_source( runner ):
