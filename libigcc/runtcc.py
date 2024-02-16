@@ -105,8 +105,11 @@ def run_compile( subs_compiler_command, runner ):
     # print("$ " + ( " ".join( subs_compiler_command ) ))
     compile_process = subprocess.Popen( subs_compiler_command,
         stdin = subprocess.PIPE, stderr = subprocess.PIPE )
+    source = source_code.get_full_source(runner)
+    if runner.options.v > 1:
+        print(source)
     stdoutdata, stderrdata = compile_process.communicate(
-        source_code.get_full_source( runner ).encode('utf-8') )
+        source.encode('utf-8') )
 
     if compile_process.returncode == 0:
         return None
@@ -196,7 +199,7 @@ class Runner:
 
                 if run_cmp:
                     # print compiler command
-                    if self.options.v > 1:
+                    if self.options.v > 2:
                         print("$ " + ( " ".join( subs_compiler_command ) ))
                     self.compile_error = run_compile( subs_compiler_command,
                         self )
@@ -211,7 +214,7 @@ class Runner:
                             print("session_args:", *session_args)
                         stdoutdata, stderrdata = run_exe( self.exefilename,
                             session_args )
-    
+
                         if len( stdoutdata ) > self.output_chars_printed:
                             new_output = stdoutdata[self.output_chars_printed:]
                             len_new_output = len( new_output )

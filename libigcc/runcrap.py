@@ -115,7 +115,8 @@ def run_compile( subs_compiler_command, runner ):
 
     # write source code to crap_process stdin and flush stream
     source = source_code.get_full_source(runner)
-    #print(source)
+    if runner.options.v > 1:
+        print(source)
     crap_process.stdin.write(source.encode("utf-8"))
     crap_process.stdin.flush()
     crap_process.stdin.close()
@@ -214,7 +215,7 @@ class Runner:
 
                 if run_cmp:
                     # print compiler command
-                    if self.options.v > 1:
+                    if self.options.v > 2:
                         print("$ " + ( " ".join( subs_compiler_command ) ))
                     self.compile_error = run_compile( subs_compiler_command,
                         self )
