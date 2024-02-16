@@ -1,6 +1,8 @@
 Interactive TCC
 ===============
 
+Make C more like Python.
+
 A read-eval-print loop (REPL) for C/C++ programmers, written in Python.
 
 Interactive TCC (itcc) is a python3 fork of Interactive GCC (igcc) with TCC compiler option. Get it from GitHub https://github.com/themanyone/itcc
@@ -13,24 +15,38 @@ The advantage of using TCC is speed. There are no compiler delays between enteri
 Use the Interactive TCC shell, like this:
 
  $ ./itcc
+ Released under GNU GPL version 2 or later, with NO WARRANTY.
+ Type ".h" for help.
+ 
  tcc> int a = 5;
  tcc> a -= 2;
  tcc> if (a < 4) {
- ['-:16: error: identifier expected']
+ [Compile error - type .e to see it.]
  tcc>    printf("a is %i\n", a);
- ['-:17: error: identifier expected']
+ [Compile error - type .e to see it.]
  tcc> }
  a is 3
  tcc> |
 
 Ignore errors. The result is printed after typing the closing brace "}".
 
+Pass arguments to Interactive TCC and operate on them.
+
+ $ ./itcc -- foo bar baz
+
+ tcc> puts(argv[2]);
+ bar
+ tcc> |
+
 Interactive Crap
 ================
 
-Tired of typing all those semicolons, curly braces, and parenthesis? Want to indent instead, like Python but still produce valid C code? Crap coding is also supported. Crap is a light-weight wrapper around standard C. And since braces are added automatically, there might be fewer errors. Get crap from https://themanyone.github.io/crap/
+Interactive, concise, regex-aware preprocessor (icrap) *is standard C*, without most of the semicolons, curly braces, and parenthesis. Like Python, use tab or indent 4 spaces instead of adding curly braces. Use two spaces instead of parenthesis. Since braces are added automatically, it saves typing. There are also some exciting, new go-like language features that really simplify C coding. Get crap from https://themanyone.github.io/crap/
 
  $ ./icrap -lm
+ Released under GNU GPL version 2 or later, with NO WARRANTY.
+ Type ".h" for help.
+
  crap> #include "math.h"
  crap> for  int x=0;x<5;x++
  crap>      printf  "%i squared is %0.0f\n", x, pow(x, 2.0)
@@ -41,7 +57,22 @@ Tired of typing all those semicolons, curly braces, and parenthesis? Want to ind
  4 squared is 16
  crap> |
 
-Interactive TCC works about like the original Interactive GCC (igcc), which is also included in this package. If you can convert C++ to C, you might even be able to struggle through some of following examples using itcc, or icrap.
+Supply includes and libs on the command line. Work with glib-2.0, plugins, etc. Test code without the compile step. Add extra CFLAGS and args. It's all free.
+
+ icrap $(pkg-config --cflags --libs glib-2.0) -std=c99 -g -Wall -- foo myargs
+ crap> .l
+ #include <glib.h>
+ #include <glib/gprintf.h>
+ crap> GDateTime *dt=g_date_time_new_now_local ();
+ crap> int yyyy,mm,dd
+ crap> g_date_time_get_ymd dt, &yyyy, &mm, &dd
+ crap> g_print "date: %.4d-%.2d-%.2d\n", yyyy, mm, dd
+ date: 2024-02-14
+ crap> puts  argv[2]
+ myargs
+ crap> |
+
+Interactive Tcc and Interactive Crap are based on the original Interactive GCC (igcc), which is also included in this package. Those who have no problem converting C++ to C, might even be able to struggle through some of following examples using itcc, or icrap.
 
 Interactive GCC
 ===============
@@ -82,7 +113,7 @@ Compile errors can be tolerated until the code works:
  [Compile error - type .e to see it.]
  g++> {
  [Compile error - type .e to see it.]
- g++> 	cout << it->first << " " << it->second << endl;
+ g++>	cout << it->first << " " << it->second << endl;
  [Compile error - type .e to see it.]
  g++> }
  bar 15
@@ -116,7 +147,7 @@ Your own libs can be linked too:
  defined_in_cpp saying hello.
  g++> |
 
-The cstdio, iostream and string headers are automatically included, and the std namespace is automatically in scope.
+The cstdio, iostream and string headers are automatically included, and the std namespace is already in scope.
 
 FAQ. Issues.
 ============
@@ -196,4 +227,11 @@ IGCC comes with NO WARRANTY.
 
 See the file COPYING for more information.
 
-This fork may contain modifications which are Copyright (C) 2023 by Henry Kroll III under the same license. Blame him if there are problems with these updates. Issues for this fork are maintained on GitHub.
+This fork is maintained with updated code, which is Copyright (C) 2024 by Henry Kroll III under the same license. Blame him if there are problems with these updates. Issues for this fork are maintained on GitHub.
+
+Browse Themanyone
+- GitHub https://github.com/themanyone
+- YouTube https://www.youtube.com/themanyone
+- Mastodon https://mastodon.social/@themanyone
+- Linkedin https://www.linkedin.com/in/henry-kroll-iii-93860426/
+- [TheNerdShow.com](http://thenerdshow.com/)
