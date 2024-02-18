@@ -1,5 +1,5 @@
 APP_NAME=igcc
-VERSION=0.2
+VERSION=0.3
 TMP_DIR=/tmp/$(APP_NAME)
 
 pkg-src:

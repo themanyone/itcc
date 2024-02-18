@@ -1,11 +1,11 @@
 Interactive TCC
 ===============
 
-Make C more like Python.
+Make programming more like Python.
 
-A read-eval-print loop (REPL) for C/C++ programmers, written in Python.
+An evaluation context, or read-eval-print loop (REPL) for C, C++, rust, & crap, written in Python.
 
-Interactive TCC (itcc) is a python3 fork of Interactive GCC (igcc) with TCC compiler option. Get it from GitHub https://github.com/themanyone/itcc
+Interactive TCC (itcc) is a python3 fork of Interactive GCC (igcc), with added support for TCC, rust, and crap. Get it from GitHub https://github.com/themanyone/itcc For a similar experience in the browser, checkout [repl.it](//repl.it) or [rextester](//rextester.com)
 
 Get TCC compiler here:
  git clone https://repo.or.cz/tinycc.git/
@@ -148,6 +148,28 @@ Your own libs can be linked too:
  g++> |
 
 The cstdio, iostream and string headers are automatically included, and the std namespace is already in scope.
+
+Interactive Rust
+================
+
+It is now possible to do some repl activity with rust. Pass arguments to rust session after `--`. As usual, ignore temporary compile errors until finishing closing brace.
+
+ $ ./irust -- foo bar baz
+ rustc 0.3
+Released under GNU GPL version 2 or later, with NO WARRANTY.
+Type ".h" for help.
+
+ rust> use std::env;
+ rust> let args: Vec<String> = env::args().collect();
+ rust> for arg in args.iter() {
+ [Compile error - type .e to see it.]
+ rust> println!("{}", arg);
+ [Compile error - type .e to see it.]
+ rust> }
+ foo
+ bar
+ baz
+ rust> 
 
 FAQ. Issues.
 ============
