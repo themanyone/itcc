@@ -1,11 +1,11 @@
 Interactive TCC
 ===============
 
-Make programming more like Python.
+Make programming more like Python. Now with Rust support!
 
-An evaluation context, or read-eval-print loop (REPL) for C, C++, rust, & crap, written in Python.
+An evaluation context, or read-eval-print loop (REPL) for C, C++, Rust, & Crap, written in Python.
 
-Interactive TCC (itcc) is a python3 fork of Interactive GCC (igcc), with added support for TCC, rust, and crap. Get it from GitHub https://github.com/themanyone/itcc For a similar experience in the browser, checkout [repl.it](//repl.it) or [rextester](//rextester.com)
+Interactive TCC (itcc) is a python3 fork of Interactive GCC (igcc). And we keep adding other languages as well. Get it from GitHub https://github.com/themanyone/itcc For a somewhat similar exercise in the browser, checkout https://repl.it or https://rextester.com
 
 Get TCC compiler here:
  git clone https://repo.or.cz/tinycc.git/
@@ -152,7 +152,7 @@ The cstdio, iostream and string headers are automatically included, and the std 
 Interactive Rust
 ================
 
-It is now possible to do some repl activity with rust. Pass arguments to rust session after `--`. As usual, ignore temporary compile errors until finishing closing brace.
+We now run rust interactively. Pass arguments to rust session after `--`. As usual, ignore temporary compile errors until finishing closing brace. Get rust from http://rust-lang.org
 
  $ ./irust -- foo bar baz
  rustc 0.3
@@ -181,6 +181,24 @@ Yes. Although it runs all the code each time, it only prints the new output. Sup
 Downloading and using
 ---------------------
 itcc is published on GitHub. Get it from https://github.com/themanyone/itcc
+
+Other REPLs
+-----------
+various languages in the browser http://repl.it
+csharp: included with monodevelop http://www.csharphelp.com/
+psysh: comes with php for php code http://php.net
+evcxr: another Rust REPL https://github.com/evcxr/evcxr
+ipython: interactive python https://github.com/ipython/ipython
+rep.lua: a lua REPL https://github.com/hoelzro/lua-repl
+re.pl: perl command line https://github.com/daurnimator/rep
+d8-314: from V8, Javascript https://developers.google.com/v8/
+csi: from chicken, a scheme REPL http://call-cc.org/
+RStudio: interactive R coding https://rstudio.com/
+Ruby IRB: REPL tool for Ruby https://ruby-doc.org/stdlib-2.7.2/libdoc/irb/rdoc/IRB.html
+numerous bash-like shells and interpreters
+
+Legacy Code
+-----------
 
 For Python2, you may opt to download Andy Balaam's original IGCC tarball from the Sourceforge download area:
 
