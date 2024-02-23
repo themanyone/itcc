@@ -48,6 +48,8 @@ lib_command = ( "-l$cmd", )
 #---------------
 
 incl_re = re.compile( r"\s*#\s*include\s" )
+func_st = re.compile( r"\s*//{\s" )
+func_ed = re.compile( r"\s*//}\s" )
 
 #---------------
 

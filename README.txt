@@ -3,16 +3,15 @@ Interactive TCC
 
 Make programming more like Python. Now with Rust support!
 
-An evaluation context, or read-eval-print loop (REPL) for C, C++, Rust, & Crap, written in Python.
+An command-line shell for C, C++, Rust, and the concise, regex-aware CPP (CRAP). Also known as an evaluation context, or read-eval-print loop (REPL), the shell allows programers to type commands and see immediate results.
 
-Interactive TCC (itcc) is a python3 fork of Interactive GCC (igcc). And we keep adding other languages as well. Get it from GitHub https://github.com/themanyone/itcc For a somewhat similar exercise in the browser, checkout https://repl.it or https://rextester.com
+About this project. Interactive TCC (itcc) is a small python3 project originally forked from Interactive GCC (igcc). And we keep adding other languages as well. Get it from GitHub https://github.com/themanyone/itcc For a somewhat similar exercise in the browser, checkout https://repl.it or https://rextester.com
 
-Get TCC compiler here:
- git clone https://repo.or.cz/tinycc.git/
+Depedencies. Get the optional TINYCC compiler (tcc) here (or skip down to the C++ section ad use GCC). The experimntal MOB branch of tcc accepts random contributions from anyone, so check it over carefully! Join the mailing list and check back often. git clone https://repo.or.cz/tinycc.git/
 
-The advantage of using TCC is speed. There are no compiler delays between entering code and seeing the results! But it lacks some of the functionality of GCC. Also, TCC is a C compiler, not a C++ compiler like GCC.
+The main reason we like tcc is compilation speed. Owing to its small download size, and the smallness of the resulting executables, tcc's one-pass build ensures virtually no compiler delays between entering code and seeing the results! Tcc supports Windows, Linux, Android and other targets with many common GCC extensions. But it might lack some of the optimizations of GCC. Also, tcc is a C compiler, not a C/C++ compiler suite like GCC.
 
-Use the Interactive TCC shell, like this:
+Use our Interactive tcc shell, like this:
 
  $ ./itcc
  Released under GNU GPL version 2 or later, with NO WARRANTY.
@@ -41,8 +40,7 @@ Pass arguments to Interactive TCC and operate on them.
 Interactive Crap
 ================
 
-Interactive, concise, regex-aware preprocessor (icrap) *is standard C*, without most of the semicolons, curly braces, and parenthesis. Like Python, use tab or indent 4 spaces instead of adding curly braces. Use two spaces instead of parenthesis. Since braces are added automatically, it saves typing. There are also some exciting, new go-like language features that really simplify C coding. Get crap from https://themanyone.github.io/crap/
-
+Interactive, concise, regex-aware preprocessor (icrap) *is standard C* (using tcc in the background), without most of the semicolons, curly braces, and parenthesis. Like Python, use tab or indent 4 spaces instead of adding curly braces. Use two spaces instead of parenthesis. Since braces are added automatically, it saves typing. There are also some exciting, new go-like language features that really simplify C coding. Get crap from https://themanyone.github.io/crap/
  $ ./icrap -lm
  Released under GNU GPL version 2 or later, with NO WARRANTY.
  Type ".h" for help.
@@ -72,7 +70,7 @@ Supply includes and libs on the command line. Work with glib-2.0, plugins, etc. 
  myargs
  crap> |
 
-Interactive Tcc and Interactive Crap are based on the original Interactive GCC (igcc), which is also included in this package. Those who have no problem converting C++ to C, might even be able to struggle through some of following examples using itcc, or icrap.
+Interactive Tcc and Interactive Crap build upon the original Interactive GCC (igcc), which is also included in this package. Those who have no problem converting C++ to C, might even be able to struggle through some of following examples using itcc, or icrap.
 
 Interactive GCC
 ===============
@@ -152,7 +150,7 @@ The cstdio, iostream and string headers are automatically included, and the std 
 Interactive Rust
 ================
 
-We now run rust interactively. Pass arguments to rust session after `--`. As usual, ignore temporary compile errors until finishing closing brace. Get rust from http://rust-lang.org
+We now run rust interactively. The first few arguments are passed along to the rust compiler. Everythig after the `--` is passed along to the interactive session, allowing programmers to play with them. As usual, ignore temporary compile errors until finishing closing brace. Get rust from http://rust-lang.org Command-line documentation https://rust-cli.github.io/book/tutorial/cli-args.html
 
  $ ./irust -- foo bar baz
  rustc 0.3
@@ -176,7 +174,7 @@ FAQ. Issues.
 
 How does it work? Does it re-run the entire code block each time?
 
-Yes. Although it runs all the code each time, it only prints the new output. Supposedly. There appears to be some bugs with detecting what was already printed, causing some new lines to produce no output. In that case, just restart it. We're working on that...
+Yes. Although it runs all the code each time, it only prints the new output. Supposedly. There appears to be some bugs with detecting what was already printed, causing some new lines to produce no output. In that case, just press CTRL-C or CTRL-D and restart it. We're working on that...
 
 Downloading and using
 ---------------------
