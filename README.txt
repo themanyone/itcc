@@ -5,9 +5,9 @@ Make programming more like Python. Now with Rust support!
 
 An command-line shell for C, C++, Rust, and the concise, regex-aware CPP (CRAP). Also known as an evaluation context, or read-eval-print loop (REPL), the shell allows programers to type commands and see immediate results.
 
-About this project. Interactive TCC (itcc) is a small python3 project originally forked from Interactive GCC (igcc). And we keep adding other languages as well. Get it from GitHub https://github.com/themanyone/itcc For a somewhat similar exercise in the browser, checkout https://repl.it or https://rextester.com
+About this project. Interactive TCC (itcc) is a small python3 project originally forked from Interactive GCC (igcc). And we keep adding other languages as well. We do our best to make the code work for us, but it comes with NO WARRANTEE, expressed or implied. You are free to shar and modify free software in according with the GNU General Public License (GPL) Version 2. See COPYING.txt for details. Get ITCC from GitHub https://github.com/themanyone/itcc
 
-Depedencies. Get the optional TINYCC compiler (tcc) here (or skip down to the C++ section ad use GCC). The experimntal MOB branch of tcc accepts random contributions from anyone, so check it over carefully! Join the mailing list and check back often. git clone https://repo.or.cz/tinycc.git/
+Depedencies. Build the optional TINYCC compiler (tcc) (or skip down to the C++ section ad use GCC). The experimntal MOB branch of tcc accepts random contributions from anyone, so check it over carefully! Join the active mailing list, contribute fixes, and update often. git clone https://repo.or.cz/tinycc.git/
 
 The main reason we like tcc is compilation speed. Owing to its small download size, and the smallness of the resulting executables, tcc's one-pass build ensures virtually no compiler delays between entering code and seeing the results! Tcc supports Windows, Linux, Android and other targets with many common GCC extensions. But it might lack some of the optimizations of GCC. Also, tcc is a C compiler, not a C/C++ compiler suite like GCC.
 
@@ -178,7 +178,7 @@ Yes. Although it runs all the code each time, it only prints the new output. Sup
 
 Downloading and using
 ---------------------
-itcc is published on GitHub. Get it from https://github.com/themanyone/itcc
+itcc is published on GitHub. Get it from https://github.com/themanyone/itcc where developers can submit bug reports, fork, and pull requests with code contributions.
 
 Other REPLs
 -----------
