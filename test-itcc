@@ -261,7 +261,7 @@ def test_quit():
 	commands = [
 		'.q' ]
 
-	expected_output = "tcc> .q\n"
+	expected_output = "tcc> .q\n\n"
 
 	ret = run_program( commands, expected_output )
 
@@ -272,6 +272,7 @@ def test_welcome_message():
 	expected_output = (
 '''itcc $version
 Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get tcc from https://repo.or.cz/tinycc.git
 Type ".h" for help.
 
 tcc> 

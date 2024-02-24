@@ -1,4 +1,4 @@
-# itcc - a read-eval-print loop for C/C++, rust & hare programmers
+# ihare - a read-eval-print loop for C/C++, hare programmers
 #
 # Copyright (C) 2009 Andy Balaam
 #
@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
-from . import source_code_c as source_code
+from . import source_code_hare as source_code
 from . import copying
 import subprocess
 
@@ -29,7 +29,7 @@ def dot_c( runner ):
     return False, False
 
 def dot_e( runner ):
-    if runner is not None and hasattr(runner.compile_error, "decode"):
+    if runner is not None: # and hasattr(runner, "decode"):
         print(runner.compile_error.decode().strip('\n'))
     return False, False
 
@@ -69,7 +69,7 @@ dot_commands = {
     ".c" : ( "Show copying information", dot_c ),
     ".e" : ( "Show the last compile errors/warnings", dot_e ),
     ".h" : ( "Show this help message", None ),
-    ".h [lib]" : ( "Show help about C [cmd or lib]", None ),
+    ".h [lib]" : ( "Show help about hare [lib]", None ),
     ".s" : ( "Show list of lib names to use", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
@@ -91,9 +91,26 @@ def process( inp, runner ):
     if inp == ".h":
         return dot_h( runner )
     elif inp[:3] == ".h ":
-        run_process = subprocess.Popen(["man", "-Hxdg-open", "3.", inp[3:]],
+        run_process = subprocess.Popen(["haredoc", inp[3:]],
         stdout = subprocess.PIPE, stderr = subprocess.PIPE )
         stdout, stderr = run_process.communicate()
+        print(stdout.decode("utf-8"))
+        return False, False
+    elif inp == ".s":
+        print("""
+Hare Standard Libraries
+
+ascii\tbufio\tbytes\tcmd_hare_build\tcmd_hare\tcrypto_math\t
+crypto_sha256\tdirs\tencoding_hex\tencoding_utf8\tendian\terrors\t
+fmt\tformat_elf\tfs\tgetopt\thare_ast\thare_lex\thare_module\t
+hare_parse\thare_unparse\thash\tio\tlinux\tlinux_vdso\tmath\tmemio\t
+os_exec\tos\tpath\trt\tshlex\tsort_cmp\tsort\tstrconv\tstrings\t
+time_chrono\ttime_date\ttime\ttypes_c\ttypes\tunix\tunix_signal\t
+unix_tty
+
+Type '.h time' for help about time.
+Type '.h time::date' for submodule date.
+""")
         return False, False
     for cmd in sorted( dot_commands.keys() ):
         if inp == cmd:

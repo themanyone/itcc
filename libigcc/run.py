@@ -1,7 +1,7 @@
 # igcc - a read-eval-print loop for C/C++ programmers
 #
 # Copyright (C) 2009 Andy Balaam
-# with python3 and tcc support by Henry Kroll III
+# with python3, rust, hare, and tcc support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,6 +19,7 @@
 # MA 02110-1301, USA.
 
 import itertools
+import platform
 import os
 import os.path
 import re
@@ -38,7 +39,7 @@ from . import version
 # One day these will be in a config file
 
 prompt = "g++> "
-compiler_command = ( "g++", "-std=c++17", "-o0", "-x", "c++", "-o", "$outfile", "-",
+compiler_command = ( "g++", "-std=c++17", "-O0", "-x", "c++", "-o", "$outfile", "-",
     "$include_dirs", "$lib_dirs", "$libs" )
 
 include_dir_command = ( "-I$cmd", )
@@ -48,8 +49,6 @@ lib_command = ( "-l$cmd", )
 #---------------
 
 incl_re = re.compile( r"\s*#\s*include\s" )
-func_st = re.compile( r"\s*//{\s" )
-func_ed = re.compile( r"\s*//}\s" )
 
 #---------------
 
@@ -176,7 +175,6 @@ class Runner:
 
     def do_run( self, session_args ):
         read_line = create_read_line_function( self.inputfile, prompt )
-    
         subs_compiler_command = get_compiler_command(
             self.options, self.extra_options, self.exefilename )
 
@@ -207,9 +205,11 @@ class Runner:
                         self )
 
                     if self.compile_error is not None:
+                        err = self.compile_error.decode().strip('\n')
                         if self.options.v > 1:
-                            print(self.compile_error.decode().strip('\n'))
-                        else:
+                            print(err)
+                        elif (err.find("empty block") < 0
+                          and err.find("end of file") < 0) or self.options.e:
                             print("[Compile error - type .e to see it.]")
                     else:
                         if self.options.v > 0:
@@ -276,6 +276,8 @@ def parse_args( argv ):
         "Run an interactive C++ live coding session."
     parser.add_argument( "-v", action="count", default=0,
         help = "Increase verbosity." )
+    parser.add_argument( "-e", action="store_true",
+        help = "Show errors about empty blocks." )
     parser.add_argument( "-I", dest="INCLUDE", action="append",
         help = "Add INCLUDE to the list of directories to " +
             "be searched for header files." )
@@ -315,9 +317,8 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
                 print_welcome()
             Runner(options, extra_args, inputfile, exefilename).do_run(session_args)
         except Exception as e:
-            if hasattr(e, '__len__'):
-                print(e)
-            ret = "quit"
+            print(e)
+        ret = "quit"
 
     if os.path.isfile(exefilename):
         os.remove(exefilename)

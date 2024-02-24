@@ -1,7 +1,7 @@
-# irust - a read-eval-print loop for C/C++ & rust programmers
-3#
+# irust - a read-eval-print loop for C/C++, rust & hare programmers
+#
 # Copyright (C) 2009 Andy Balaam
-# with python3, rust, and tcc support by Henry Kroll III
+# with python3, rust, hare, and tcc support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,6 +19,7 @@
 # MA 02110-1301, USA.
 
 import itertools
+import platform
 import os
 import os.path
 import re
@@ -47,7 +48,7 @@ lib_command = ( "-l $cmd", )
 
 #---------------
 
-incl_re = re.compile( r"\s*use\s" )
+incl_re = re.compile( r"\s*(use|extern|^#)\s" )
 
 #---------------
 
@@ -71,7 +72,7 @@ def create_read_line_function( inputfile, prompt ):
         return lambda: read_line_from_file( inputfile, prompt )
 
 def get_temporary_file_name():
-    outfile = tempfile.NamedTemporaryFile( prefix = 'rust-exe' )
+    outfile = tempfile.NamedTemporaryFile( prefix = 'irust-exe' )
     outfilename = outfile.name
     outfile.close()
     return outfilename
@@ -102,7 +103,7 @@ def get_compiler_command( options, extra_options, outfilename ):
 
 
 def run_compile( subs_compiler_command, runner ):
-    # print("$ " + ( " ".join( subs_compiler_command ) ))
+
     compile_process = subprocess.Popen( subs_compiler_command,
         stdin = subprocess.PIPE, stderr = subprocess.PIPE )
     source = source_code.get_full_source(runner)
@@ -130,8 +131,9 @@ def run_exe( exefilename, extra_args ):
     return run_process.communicate()
 
 def print_welcome():
-    print('''rustc $version
+    print('''irust $version
 Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get rust from http://rust-lang.org
 Type ".h" for help.
 '''.replace( "$version", version.VERSION ))
 
@@ -174,7 +176,6 @@ class Runner:
 
     def do_run( self, session_args ):
         read_line = create_read_line_function( self.inputfile, prompt )
-    
         subs_compiler_command = get_compiler_command(
             self.options, self.extra_options, self.exefilename )
 
@@ -205,9 +206,11 @@ class Runner:
                         self )
 
                     if self.compile_error is not None:
+                        err = self.compile_error.decode().strip('\n')
                         if self.options.v > 1:
-                            print(self.compile_error.decode().strip('\n'))
-                        else:
+                            print(err)
+                        elif (err.find("unclosed") < 0
+                          and err.find("end of file") < 0) or self.options.e:
                             print("[Compile error - type .e to see it.]")
                     else:
                         if self.options.v > 0:
@@ -271,9 +274,11 @@ class Runner:
 def parse_args( argv ):
     parser = ArgumentParser()
     parser.description =\
-        "Run an interactive C live coding session."
+        "Run an interactive Rust live coding session."
     parser.add_argument( "-v", action="count", default=0,
         help = "Increase verbosity." )
+    parser.add_argument( "-e", action="store_true",
+        help = "Show errors about empty blocks." )
     parser.add_argument( "-I", dest="INCLUDE", action="append",
         help = "Add INCLUDE to the list of directories to " +
             "be searched for header files." )
@@ -313,10 +318,7 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
                 print_welcome()
             Runner(options, extra_args, inputfile, exefilename).do_run(session_args)
         except Exception as e:
-            if hasattr(e, '__len__'):
-                print(e)
-            else:
-                print("exception in runrust.py")
+            print(e)
             ret = "quit"
 
     if os.path.isfile(exefilename):

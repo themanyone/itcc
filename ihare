@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
-# irust - a read-eval-print loop for C/C++ & rust programmers
+# ihare - a read-eval-print loop for C/C++ & hare programmers
 #
 # Copyright (C) 2009 Andy Balaam
-# with python3 and tcc support by Henry Kroll III
+# with python3, rust, hare, & tcc support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,8 +20,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
-import libigcc.runrust
-import sys
+import libigcc.runhare
 
 if __name__ == "__main__":
-    libigcc.runrust.run()
+    libigcc.runhare.run()
+

@@ -1,7 +1,7 @@
 # icrap - a read-eval-print loop for C/C++ programmers
 #
 # Copyright (C) 2009 Andy Balaam
-# with python3 and tcc support by Henry Kroll III
+# with python3, rust, hare, and tcc support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -19,6 +19,7 @@
 # MA 02110-1301, USA.
 
 import itertools
+import platform
 import os
 import os.path
 import re
@@ -71,7 +72,9 @@ def create_read_line_function( inputfile, prompt ):
         return lambda: read_line_from_file( inputfile, prompt )
 
 def get_temporary_file_name():
-    outfile = tempfile.NamedTemporaryFile( prefix = 'ifcrap-exe' )
+    # write source to input file
+    suff = ".exe" if platform.system() == 'Windows' else ""
+    outfile = tempfile.NamedTemporaryFile( prefix = "icrap", suffix = suff )
     outfilename = outfile.name
     outfile.close()
     return outfilename
@@ -148,6 +151,7 @@ def run_exe( exefilename, extra_args ):
 def print_welcome():
     print('''icrap $version
 Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get crap from https://github.com/themanyone/crap
 Type ".h" for help.
 '''.replace( "$version", version.VERSION ))
 
@@ -190,7 +194,6 @@ class Runner:
 
     def do_run( self, session_args ):
         read_line = create_read_line_function( self.inputfile, prompt )
-    
         subs_compiler_command = get_compiler_command(
             self.options, self.extra_options, self.exefilename )
 
@@ -221,9 +224,11 @@ class Runner:
                         self )
 
                     if self.compile_error is not None:
+                        err = self.compile_error.decode().strip('\n')
                         if self.options.v > 1:
-                            print(self.compile_error.decode().strip('\n'))
-                        else:
+                            print(err)
+                        elif (err.find("empty block") < 0
+                          and err.find("end of file") < 0) or self.options.e:
                             print("[Compile error - type .e to see it.]")
                     else:
                         if self.options.v > 0:
@@ -290,6 +295,8 @@ def parse_args( argv ):
         "Run an interactive crap pseudocode compiler session."
     parser.add_argument( "-v", action="count", default=0,
         help = "Increase verbosity." )
+    parser.add_argument( "-e", action="store_true",
+        help = "Show errors about empty blocks." )
     parser.add_argument( "-I", dest="INCLUDE", action="append",
         help = "Add INCLUDE to the list of directories to " +
             "be searched for header files." )
@@ -329,12 +336,11 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
                 print_welcome()
             Runner(options, extra_args, inputfile, exefilename).do_run(session_args)
         except Exception as e:
-            if hasattr(e, '__len__'):
-                print(e)
-            exefilename='/tmp/crap_code.c'
-            if os.path.isfile(exefilename):
-                os.remove(exefilename)
-            ret = "quit"
+            print(e)
+        exefilename='/tmp/crap_code.c'
+        if os.path.isfile(exefilename):
+            os.remove(exefilename)
+        ret = "quit"
 
     if os.path.isfile(exefilename):
         os.remove(exefilename)

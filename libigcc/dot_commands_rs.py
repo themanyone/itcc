@@ -1,4 +1,4 @@
-# irust - a read-eval-print loop for C/C++ & rust programmers
+# irust - a read-eval-print loop for C/C++, hare & rust programmers
 #
 # Copyright (C) 2009 Andy Balaam
 #
@@ -20,8 +20,17 @@
 from . import source_code_rs as source_code
 from . import copying
 import subprocess
+import glob
+import os
+from os import environ as env
 
-class IGCCQuitException:
+# documentation search paths
+docsearch = glob.glob(env.get('HOME') + '/.crustup/toolchains/'
+ + 'nightly*/share/doc/rust/html/index.html')
+
+docs = docsearch[0] if docsearch else '/usr/share/doc/rust/html/index.html'
+
+class IGCCQuitException(Exception):
     pass
 
 def dot_c( runner ):
@@ -29,7 +38,8 @@ def dot_c( runner ):
     return False, False
 
 def dot_e( runner ):
-    print(runner.compile_error.decode().strip('\n'))
+    if runner is not None and hasattr(runner.compile_error, "decode"):
+        print(runner.compile_error.decode().strip('\n'))
     return False, False
 
 def dot_q( runner ):
@@ -68,6 +78,7 @@ dot_commands = {
     ".c" : ( "Show copying information", dot_c ),
     ".e" : ( "Show the last compile errors/warnings", dot_e ),
     ".h" : ( "Show this help message", None ),
+    ".h [lib]" : ( "Show help about C [cmd or lib]", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
     ".L" : ( "List the whole program as given to the compiler", dot_L ),
@@ -88,7 +99,8 @@ def process( inp, runner ):
     if inp == ".h":
         return dot_h( runner )
     elif inp[:3] == ".h ":
-        run_process = subprocess.Popen(["man", "-Hxdg-open", "3.", inp[3:]],
+        if not os.path.isfile( docs ): return False, False
+        run_process = subprocess.Popen(["xdg-open", docs + "?search=" + inp[3:]],
         stdout = subprocess.PIPE, stderr = subprocess.PIPE )
         stdout, stderr = run_process.communicate()
         return False, False
@@ -97,4 +109,3 @@ def process( inp, runner ):
             return dot_commands[cmd][1]( runner )
 
     return True, True
-

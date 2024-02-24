@@ -263,7 +263,7 @@ def test_quit():
 	commands = [
 		'.q' ]
 
-	expected_output = "g++> .q\n"
+	expected_output = "g++> .q\n\n"
 
 	ret = run_program( commands, expected_output )
 

@@ -1,4 +1,4 @@
-# itcc - a read-eval-print loop for C/C++, rust & hare programmers
+# ihare - a read-eval-print loop for C/C++, rust & hare programmers
 #
 # Copyright (C) 2009 Andy Balaam
 # with python3, rust, hare, and tcc support by Henry Kroll III
@@ -30,25 +30,24 @@ import tempfile
 from contextlib import redirect_stdout
 from argparse import ArgumentParser
 
-from . import dot_commands_c as dot_commands
-from . import source_code_c as source_code
+from . import dot_commands_hare as dot_commands
+from . import source_code_hare as source_code
 from . import version
 
 # --------------
 
 # One day these will be in a config file
 
-prompt = "tcc> "
-compiler_command = ( "tcc", "-std=c11", "-x", "c", "-o", "$outfile", "-",
-    "$include_dirs", "$lib_dirs", "$libs" )
+prompt = "hare> "
+compiler_command = ( 'hare', "build", "$libs", "-o", "$outfile", "$infile" )
 
-include_dir_command = ( "-I$cmd", )
-lib_dir_command = ( "-L$cmd", )
-lib_command = ( "-l$cmd", )
+include_dir_command = ( "-I $cmd", )
+lib_dir_command = ( "-L $cmd", )
+lib_command = ( "-l $cmd", )
 
 #---------------
 
-incl_re = re.compile( r"\s*#\s*include\s" )
+incl_re = re.compile( r"\s*use\s" )
 
 #---------------
 
@@ -71,13 +70,16 @@ def create_read_line_function( inputfile, prompt ):
     else:
         return lambda: read_line_from_file( inputfile, prompt )
 
-def get_temporary_file_name():
+def get_temporary_file_names():
     # write source to input file
     suff = ".exe" if platform.system() == 'Windows' else ""
-    outfile = tempfile.NamedTemporaryFile( prefix = 'itcc', suffix = suff )
+    infile = tempfile.NamedTemporaryFile( prefix = 'ihare', suffix = '.ha' )
+    outfile = tempfile.NamedTemporaryFile( prefix = 'ohare', suffix = suff )
+    infilename = infile.name
     outfilename = outfile.name
+    infile.close()
     outfile.close()
-    return outfilename
+    return infilename, outfilename
 
 def append_multiple( single_cmd, cmdlist, ret ):
     if cmdlist is not None:
@@ -86,14 +88,14 @@ def append_multiple( single_cmd, cmdlist, ret ):
                 ret.append(
                     cmd_part.replace( "$cmd" , cmd ) )
 
-def get_compiler_command( options, extra_options, outfilename ):
+def get_compiler_command( options, extra_options, infilename, outfilename ):
     ret = []
 
     for part in compiler_command:
-        if part == "-o":
-            append_multiple( extra_options, ["-o"], ret)
-        if part == "$include_dirs":
-            append_multiple( include_dir_command, options.INCLUDE, ret )
+        if part == "$infile":
+            ret.append( part.replace( "$infile", infilename ) )
+        #elif part == "-o":
+        #    append_multiple( extra_options, ["-o"], ret)
         elif part == "$lib_dirs":
             append_multiple( lib_dir_command, options.LIBDIR,ret )
         elif part == "$libs":
@@ -104,15 +106,16 @@ def get_compiler_command( options, extra_options, outfilename ):
     return ret
 
 
-def run_compile( subs_compiler_command, runner ):
-    # print("$ " + ( " ".join( subs_compiler_command ) ))
-    compile_process = subprocess.Popen( subs_compiler_command,
-        stdin = subprocess.PIPE, stderr = subprocess.PIPE )
+def run_compile( subs_compiler_command, runner, srcfilename ):
+
     source = source_code.get_full_source(runner)
     if runner.options.v > 1:
         print(source)
-    stdoutdata, stderrdata = compile_process.communicate(
-        source.encode('utf-8') )
+    with open(srcfilename, 'w') as file:
+        file.write(source)
+    compile_process = subprocess.Popen( subs_compiler_command,
+        stderr = subprocess.PIPE )
+    stdoutdata, stderrdata = compile_process.communicate()
 
     if compile_process.returncode == 0:
         return None
@@ -133,9 +136,9 @@ def run_exe( exefilename, extra_args ):
     return run_process.communicate()
 
 def print_welcome():
-    print('''itcc $version
+    print('''ihare $version
 Released under GNU GPL version 2 or later, with NO WARRANTY.
-Get tcc from https://repo.or.cz/tinycc.git
+Get hare from https://sr.ht/~sircmpwn/hare/sources
 Type ".h" for help.
 '''.replace( "$version", version.VERSION ))
 
@@ -165,10 +168,11 @@ class UserInput:
 
 class Runner:
 
-    def __init__( self, options, extra_options, inputfile, exefilename ):
+    def __init__( self, options, extra_options, inputfile, srcfilename, exefilename ):
         self.options = options
         self.extra_options = extra_options
         self.inputfile = inputfile
+        self.srcfilename = srcfilename
         self.exefilename = exefilename
         self.user_input = []
         self.input_num = 0
@@ -179,7 +183,7 @@ class Runner:
     def do_run( self, session_args ):
         read_line = create_read_line_function( self.inputfile, prompt )
         subs_compiler_command = get_compiler_command(
-            self.options, self.extra_options, self.exefilename )
+            self.options, self.extra_options, self.srcfilename, self.exefilename )
 
         inp = 1
         while inp is not None:
@@ -205,13 +209,14 @@ class Runner:
                     if self.options.v > 2:
                         print("$ " + ( " ".join( subs_compiler_command ) ))
                     self.compile_error = run_compile( subs_compiler_command,
-                        self )
+                        self, self.srcfilename )
 
                     if self.compile_error is not None:
                         err = self.compile_error.decode().strip('\n')
                         if self.options.v > 1:
                             print(err)
-                        elif err.find("<eof>") < 0 or self.options.e:
+                        elif (err.find("empty block") < 0
+                          and err.find("end of file") < 0) or self.options.e:
                             print("[Compile error - type .e to see it.]")
                     else:
                         if self.options.v > 0:
@@ -275,14 +280,11 @@ class Runner:
 def parse_args( argv ):
     parser = ArgumentParser()
     parser.description =\
-        "Run an interactive C live coding session."
+        "Run an interactive hare live coding session."
     parser.add_argument( "-v", action="count", default=0,
         help = "Increase verbosity." )
     parser.add_argument( "-e", action="store_true",
-        help = "Show errors about <eof> and empty blocks." )
-    parser.add_argument( "-I", dest="INCLUDE", action="append",
-        help = "Add INCLUDE to the list of directories to " +
-            "be searched for header files." )
+        help = "Show errors about empty blocks." )
     parser.add_argument( "-L", dest="LIBDIR", action="append",
         help = "Add LIBDIR to the list of directories to " +
             "be searched for library files." )
@@ -313,16 +315,18 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
         try:
             options, extra_args, session_args = parse_args(argv)
 
-            exefilename = get_temporary_file_name()
+            srcfilename, exefilename = get_temporary_file_names()
             ret = "normal"
             if print_welc:
                 print_welcome()
-            Runner(options, extra_args, inputfile, exefilename).do_run(session_args)
+            Runner(options, extra_args, inputfile, srcfilename, exefilename).do_run(session_args)
         except Exception as e:
-            print(e)
+            if hasattr(e, '__len__'):
+                print(e)
             ret = "quit"
 
     if os.path.isfile(exefilename):
         os.remove(exefilename)
-
+    if os.path.isfile(srcfilename):
+        os.remove(srcfilename)
     return ret

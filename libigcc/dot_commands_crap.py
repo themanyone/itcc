@@ -1,4 +1,4 @@
-# icrap - a read-eval-print loop for C/C++ programmers
+# icrap - a read-eval-print loop for C/C++, hare & rust programmers
 #
 # Copyright (C) 2009 Andy Balaam
 #
@@ -30,7 +30,8 @@ def dot_c( runner ):
     return False, False
 
 def dot_e( runner ):
-    print(runner.compile_error.decode().strip('\n'))
+    if runner is not None and hasattr(runner.compile_error, "decode"):
+        print(runner.compile_error.decode().strip('\n'))
     return False, False
 
 def dot_q( runner ):
@@ -56,7 +57,6 @@ def dot_r( runner ):
     else:
         print("[Nothing to redo.]")
         return False, False
-        
 
 def dot_u( runner ):
     undone_line = runner.undo()
@@ -74,6 +74,8 @@ dot_commands = {
     ".c" : ( "Show copying information", dot_c ),
     ".e" : ( "Show the last compile errors/warnings", dot_e ),
     ".h" : ( "Show this help message", None ),
+    ".h [lib]" : ( "Show help about C [cmd or lib]", None ),
+    ".s" : ( "Show list of lib names to use", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
     ".L" : ( "List the C program as given to the compiler", dot_L ),

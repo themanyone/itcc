@@ -21,7 +21,7 @@ from . import source_code
 from . import copying
 import subprocess
 
-class IGCCQuitException:
+class IGCCQuitException(Exception):
     pass
 
 def dot_c( runner ):

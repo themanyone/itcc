@@ -1,7 +1,7 @@
 # igcc - a read-eval-print loop for C/C++ programmers
 #
 # Copyright (C) 2009 Andy Balaam
-# with python3 updates by Henry Kroll III
+# with python3, rust & tcc support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License

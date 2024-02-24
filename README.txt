@@ -3,13 +3,28 @@ Interactive TCC
 
 Make programming more like Python. Now with Rust support!
 
-An command-line shell for C, C++, Rust, and the concise, regex-aware CPP (CRAP). Also known as an evaluation context, or read-eval-print loop (REPL), the shell allows programers to type commands and see immediate results.
+An command-line shell for C, C++, Rust, and the concise, regex-aware CPP (CRAP). Also 
+known as an evaluation context, or read-eval-print loop (REPL), the shell allows 
+programers to type commands and see immediate results.
 
-About this project. Interactive TCC (itcc) is a small python3 project originally forked from Interactive GCC (igcc). And we keep adding other languages as well. We do our best to make the code work for us, but it comes with NO WARRANTEE, expressed or implied. You are free to shar and modify free software in according with the GNU General Public License (GPL) Version 2. See COPYING.txt for details. Get ITCC from GitHub https://github.com/themanyone/itcc
+About this project. Interactive TCC (itcc) is a small python3 utility originally 
+forked from Interactive GCC (igcc). And we keep adding other languages as well. We do 
+our best to make the code work for us, but it comes with NO WARRANTEEs. You are free 
+to share and modify free software in according with the GNU General Public License 
+(GPL) Version 2. See the notice at the bottom of this page and COPYING.txt for 
+details. Get ITCC from GitHub https://github.com/themanyone/itcc
 
-Depedencies. Build the optional TINYCC compiler (tcc) (or skip down to the C++ section ad use GCC). The experimntal MOB branch of tcc accepts random contributions from anyone, so check it over carefully! Join the active mailing list, contribute fixes, and update often. git clone https://repo.or.cz/tinycc.git/
+Depedencies. Build the optional TINYCC compiler (tcc) (or skip down to the C++ section 
+ad use GCC). The experimntal MOB branch of tcc accepts random contributions from 
+anyone, so check it over carefully! Join the active mailing list, contribute fixes, 
+and update often. git clone https://repo.or.cz/tinycc.git/
 
-The main reason we like tcc is compilation speed. Owing to its small download size, and the smallness of the resulting executables, tcc's one-pass build ensures virtually no compiler delays between entering code and seeing the results! Tcc supports Windows, Linux, Android and other targets with many common GCC extensions. But it might lack some of the optimizations of GCC. Also, tcc is a C compiler, not a C/C++ compiler suite like GCC.
+The main reason we like tcc is instant gratification. Owing to its small download 
+size, and the smallness of the resulting executables, tcc's one-pass build ensures 
+virtually no compiler delays between entering code and seeing the results! Tcc 
+supports Windows, Linux, Android and other targets with many common GCC extensions. 
+But it might lack some of the optimizations of GCC. Also, tcc is a C compiler, not a 
+C/C++ compiler suite like GCC.
 
 Use our Interactive tcc shell, like this:
 
@@ -20,14 +35,10 @@ Use our Interactive tcc shell, like this:
  tcc> int a = 5;
  tcc> a -= 2;
  tcc> if (a < 4) {
- [Compile error - type .e to see it.]
  tcc>    printf("a is %i\n", a);
- [Compile error - type .e to see it.]
  tcc> }
  a is 3
  tcc> |
-
-Ignore errors. The result is printed after typing the closing brace "}".
 
 Pass arguments to Interactive TCC and operate on them.
 
@@ -40,11 +51,15 @@ Pass arguments to Interactive TCC and operate on them.
 Interactive Crap
 ================
 
-Interactive, concise, regex-aware preprocessor (icrap) *is standard C* (using tcc in the background), without most of the semicolons, curly braces, and parenthesis. Like Python, use tab or indent 4 spaces instead of adding curly braces. Use two spaces instead of parenthesis. Since braces are added automatically, it saves typing. There are also some exciting, new go-like language features that really simplify C coding. Get crap from https://themanyone.github.io/crap/
- $ ./icrap -lm
- Released under GNU GPL version 2 or later, with NO WARRANTY.
- Type ".h" for help.
+Interactive, concise, regex-aware preprocessor (icrap) *is standard C* (using tcc in 
+ the background), without most of the semicolons, curly braces, and parenthesis. Like 
+ Python, use tab or indent 4 spaces instead of adding curly braces. Use two spaces 
+ instead of parenthesis. Since braces are added automatically, it saves typing. There 
+ are also some exciting, new go-like language features that really simplify C coding. 
+ Get crap from https://themanyone.github.io/crap/ $ ./icrap -lm Released under GNU GPL 
+ version 2 or later, with NO WARRANTY. Type ".h" for help.
 
+ $./icrap -lm
  crap> #include "math.h"
  crap> for  int x=0;x<5;x++
  crap>      printf  "%i squared is %0.0f\n", x, pow(x, 2.0)
@@ -55,9 +70,11 @@ Interactive, concise, regex-aware preprocessor (icrap) *is standard C* (using tc
  4 squared is 16
  crap> |
 
-Supply includes and libs on the command line. Work with glib-2.0, plugins, etc. Test code without the compile step. Add extra CFLAGS and args. It's all free.
+Supply includes and libs on the command line. Crap is compatible with glib-2.0, 
+plugins, etc. Test code without the compile step. Add extra CFLAGS and args. It's all 
+free.
 
- icrap $(pkg-config --cflags --libs glib-2.0) -std=c99 -g -Wall -- foo myargs
+ icrap $(pkg-config --cflags --libs glib-2.0) -std=c11 -g -Wall -- foo myargs
  crap> .l
  #include <glib.h>
  #include <glib/gprintf.h>
@@ -70,7 +87,10 @@ Supply includes and libs on the command line. Work with glib-2.0, plugins, etc. 
  myargs
  crap> |
 
-Interactive Tcc and Interactive Crap build upon the original Interactive GCC (igcc), which is also included in this package. Those who have no problem converting C++ to C, might even be able to struggle through some of following examples using itcc, or icrap.
+Interactive Tcc and Interactive Crap build upon the original Interactive GCC (igcc), 
+which is also included in this package. Those who have no problem converting C++ to C, 
+might even be able to struggle through some of following examples using itcc, or 
+icrap.
 
 Interactive GCC
 ===============
@@ -100,15 +120,17 @@ It is possible to include header files you need like this:
  2
  g++> |
 
-Compile errors can be tolerated until the code works:
+Start igcc with the -e option to see every compiler error notification, even a missing 
+closing brace from an unfinished block of code. These types of error notices are not 
+useful for interactive sessions, so we hide them. You can always use .e to check for 
+errors even without such warnings.
 
- $ ./igcc
+ $ ./igcc -e
  g++> #include <map>
  g++> map<string,int> hits;
  g++> hits["foo"] = 12;
  g++> hits["bar"] = 15;
  g++> for( map<string,int>::iterator it = hits.begin(); it != hits.end(); ++it )
- [Compile error - type .e to see it.]
  g++> {
  [Compile error - type .e to see it.]
  g++>	cout << it->first << " " << it->second << endl;
@@ -116,7 +138,7 @@ Compile errors can be tolerated until the code works:
  g++> }
  bar 15
  foo 12
- g++> 
+ g++> |
 
 Extra include directories can be supplied:
 
@@ -131,9 +153,9 @@ Extra include directories can be supplied:
 
 Libs can be linked:
 
- $ ./igcc -lm
+ $ ./igcc -lm # bad example since libm.a is already linked in C++
  g++> #include "math.h"
- g++> cout << pow( 3, 3 ) << endl; // Actually a bad example since libm.a is already linked in C++
+ g++> cout << pow( 3, 3 ) << endl;
  27
  g++> |
 
@@ -145,40 +167,105 @@ Your own libs can be linked too:
  defined_in_cpp saying hello.
  g++> |
 
-The cstdio, iostream and string headers are automatically included, and the std namespace is already in scope.
+The cstdio, iostream and string headers are automatically included, and the std 
+namespace is already in scope.
 
 Interactive Rust
 ================
 
-We now run rust interactively. The first few arguments are passed along to the rust compiler. Everythig after the `--` is passed along to the interactive session, allowing programmers to play with them. As usual, ignore temporary compile errors until finishing closing brace. Get rust from http://rust-lang.org Command-line documentation https://rust-cli.github.io/book/tutorial/cli-args.html
+We can now run rust interactively. Get rustup from http://rust-lang.org or your 
+distro's package manager. Use the nightly build for cutting-edge development.
+
+rustup toolchain install nightly
+rustup default nightly
+
+Typing .h [std] or any such rust idiom brings up a local copy of the documentation 
+from https://rust-cli.github.io/book/tutorial/cli-args.html, which should be installed 
+when you install rust using the above method.
+
+Now we can invoke irust. Arguments after the `--` are passed along to the interactive 
+session for us to play with.
 
  $ ./irust -- foo bar baz
- rustc 0.3
+ irust 0.3
 Released under GNU GPL version 2 or later, with NO WARRANTY.
 Type ".h" for help.
 
  rust> use std::env;
  rust> let args: Vec<String> = env::args().collect();
  rust> for arg in args.iter() {
- [Compile error - type .e to see it.]
- rust> println!("{}", arg);
- [Compile error - type .e to see it.]
+ rust>     println!("{}", arg);
  rust> }
  foo
  bar
  baz
- rust> 
+ rust> |
 
+Interactive Hare
+================
+
+Hare is a systems programming language with a static type system, manual memory 
+management, and a small runtime. It's well-suited for low-level, high-performance 
+tasks like operating systems, system tools, compilers, and networking software. Now 
+you can play with it interactively.
+
+Hare compiler:  git clone https://git.sr.ht/~sircmpwn/harec
+Hare std libs:  git clone https://git.sr.ht/~sircmpwn/hare
+Hare Website:   https://git.sr.ht/~sircmpwn/harelang.org
+Depends on QBE: https://c9x.me/compile/code.html
+Requires scdoc: https://git.sr.ht/~sircmpwn/scdoc
+
+Compile everything from the latest sources. Once installed, it will work with our 
+interactive demo here. Also, be sure and get more help, libraries, and resources 
+below.
+
+Interactive hare sssion:
+
+ $./ihare
+ ihare 0.3
+ Released under GNU GPL version 2 or later, with NO WARRANTY.
+ Get hare from https://sr.ht/~sircmpwn/hare/sources
+ Type ".h" for help.
+
+ hare> const greetings = [
+ hare>           "Hello, world!",
+ hare>           "¡Hola Mundo!",
+ hare>           "Γειά σου Κόσμε!",
+ hare>           "Привіт, світ!",
+ hare>           "こんにちは世界！",
+ hare>   ];
+ hare>   for (let i = 0z; i < len(greetings); i += 1) {
+ hare>           fmt::println(greetings[i])!;
+ hare> };
+ Hello, world!
+ ¡Hola Mundo!
+ Γειά σου Κόσμε!
+ Привіт, світ! 
+ こんにちは世界！
+ hare> 
+ hare> // get help on rt::timespec
+ hare> .h rt::timespec
+ type timespec = struct {
+        tv_sec: time_t,
+        tv_nsec: i64,
+ };
+ hare> |
+ 
 FAQ. Issues.
 ============
 
 How does it work? Does it re-run the entire code block each time?
 
-Yes. Although it runs all the code each time, it only prints the new output. Supposedly. There appears to be some bugs with detecting what was already printed, causing some new lines to produce no output. In that case, just press CTRL-C or CTRL-D and restart it. We're working on that...
+Yes. Although it runs all the code each time, it only prints the new output. 
+Supposedly. There appears to be some bugs with detecting what was already printed, 
+causing some new lines to produce no output. In that case, just press CTRL-C or CTRL-D 
+and restart it. We're working on that...
 
 Downloading and using
 ---------------------
-itcc is published on GitHub. Get it from https://github.com/themanyone/itcc where developers can submit bug reports, fork, and pull requests with code contributions.
+
+itcc is published on GitHub. Get it from https://github.com/themanyone/itcc where 
+developers can submit bug reports, fork, and pull requests with code contributions.
 
 Other REPLs
 -----------
@@ -198,7 +285,8 @@ numerous bash-like shells and interpreters
 Legacy Code
 -----------
 
-For Python2, you may opt to download Andy Balaam's original IGCC tarball from the Sourceforge download area:
+For Python2, you may opt to download Andy Balaam's original IGCC tarball from the 
+Sourceforge download area:
 
 https://sourceforge.net/projects/igcc/files/
 
@@ -211,7 +299,8 @@ And then start the program like this:
  cd igcc-0.1
  ./igcc
 
-Then type the C++ code you want to execute. It will be compiled with GCC and the results (if any) will be displayed.
+Then type the C++ code you want to execute. It will be compiled with GCC and the 
+results (if any) will be displayed.
 
 Type .h to see some general help on usage.
 
@@ -259,13 +348,16 @@ Copyright
 
 IGCC is Copyright (C) 2009 Andy Balaam
 
-IGCC is Free Software released under the terms of the GNU General Public License version 2 or later.
+IGCC is Free Software released under the terms of the GNU General Public License 
+version 2 or later.
 
 IGCC comes with NO WARRANTY.
 
 See the file COPYING for more information.
 
-This fork is maintained with updated code, which is Copyright (C) 2024 by Henry Kroll III under the same license. Blame him if there are problems with these updates. Issues for this fork are maintained on GitHub.
+This fork is maintained with updated code, which is Copyright (C) 2024 by Henry Kroll 
+III under the same license. Blame him if there are problems with these updates. Issues 
+for this fork are maintained on GitHub.
 
 Browse Themanyone
 - GitHub https://github.com/themanyone

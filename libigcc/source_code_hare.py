@@ -1,9 +1,7 @@
-#!/usr/bin/python
-
-# irust - a read-eval-print loop for C/C++ & rust programmers
+# ihare - a read-eval-print loop for C/C++ programmers
 #
 # Copyright (C) 2009 Andy Balaam
-# with python3 and tcc support by Henry Kroll III
+# with python3, rust & tcc support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,8 +18,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
-import libigcc.runrust
-import sys
+file_boilerplate = """use fmt;
+$user_includes
+export fn main() void = {
+$user_commands};"""
 
-if __name__ == "__main__":
-    libigcc.runrust.run()
+def get_full_source( runner ):
+    return ( file_boilerplate
+        .replace( "$user_commands", runner.get_user_commands_string() )
+        .replace( "$user_includes", runner.get_user_includes_string() )
+    )

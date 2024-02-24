@@ -268,7 +268,7 @@ def test_quit():
 	commands = [
 		'.q' ]
 
-	expected_output = "crap> .q\n"
+	expected_output = "crap> .q\n\n"
 
 	ret = run_program( commands, expected_output )
 
@@ -279,6 +279,7 @@ def test_welcome_message():
 	expected_output = (
 '''icrap $version
 Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get crap from https://github.com/themanyone/crap
 Type ".h" for help.
 
 crap> 
