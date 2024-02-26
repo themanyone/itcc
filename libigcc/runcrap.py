@@ -38,6 +38,7 @@ from . import version
 
 # One day these will be in a config file
 
+srcfile = source_code.srcfile
 prompt = "crap> "
 compiler_command = ( "tcc", "-std=c11", "-x", "c", "-o", "$outfile", "-",
     "$include_dirs", "$lib_dirs", "$libs" )
@@ -109,7 +110,7 @@ def run_compile( subs_compiler_command, runner ):
         stdin = subprocess.PIPE, stdout = subprocess.PIPE)
 
     # Create tee subprocess to intercept and print the C code
-    tee = subprocess.Popen(['tee', '/tmp/crap_code.c'],
+    tee = subprocess.Popen(['tee', srcfile],
         stdin = crap_process.stdout, stdout = subprocess.PIPE)
 
     # Prepare compiler to receive C code from stdin
@@ -266,6 +267,10 @@ class Runner:
             undone_input = self.user_input[ self.input_num ]
             self.output_chars_printed -= undone_input.output_chars
             self.error_chars_printed -= undone_input.error_chars
+            source = source_code.get_full_source(self)
+            with open(srcfile, 'w') as file:
+                file.write(source)
+                file.close()
             return undone_input.inp
         else:
             return None
@@ -337,12 +342,11 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
             Runner(options, extra_args, inputfile, exefilename).do_run(session_args)
         except Exception as e:
             print(e)
-        exefilename='/tmp/crap_code.c'
-        if os.path.isfile(exefilename):
-            os.remove(exefilename)
-        ret = "quit"
+            ret = "quit"
 
     if os.path.isfile(exefilename):
         os.remove(exefilename)
+    if os.path.isfile(srcfile):
+        os.remove(srcfile)
 
     return ret
