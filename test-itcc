@@ -79,9 +79,9 @@ def run_program_regex_output( commands, expected_output_re ):
 	assert_strings_match( "".join( outputfile.lines ), expected_output_re )
 
 def test_print_argv():
-    commands = [ "puts(argv[1]);" ]
-    expected_output = 'tcc> puts(argv[1]);\nfoo\ntcc> \n'
-    run_program( commands, expected_output, False, ['--', 'foo'] )
+	commands = [ "puts(argv[1]);" ]
+	expected_output = 'tcc> puts(argv[1]);\nfoo\ntcc> \n'
+	run_program( commands, expected_output, False, ['--', 'foo'] )
 
 def test_declare_var():
 	commands = [ "int a;" ]
@@ -172,14 +172,14 @@ def test_multiple_repeated_includes():
 		'#include <glob.h>',
 		'glob_t pglob;',
 		'int g = glob("*.txt", 0, NULL, &pglob);',
-		'        #  include   <libgen.h>',
+		'		#  include   <libgen.h>',
 		'puts(dirname(pglob.gl_pathv[1]));' ]
 
 	expected_output = (
 r'''tcc> #include <glob.h>
 tcc> glob_t pglob;
 tcc> int g = glob("*.txt", 0, NULL, &pglob);
-tcc>         #  include   <libgen.h>
+tcc>		 #  include   <libgen.h>
 tcc> puts(dirname(pglob.gl_pathv[1]));
 .
 tcc> 
@@ -201,8 +201,8 @@ tcc> #include <wctype.h>
 tcc> .l
 #include <wctype.h>
 
-    int a;
-    a += 2;
+	int a;
+	a += 2;
 tcc> 
 ''' )
 
@@ -226,7 +226,7 @@ def test_list_full_program():
 		'#include <iconv.h>',
 		'.L' ]
 
-	fakerunner = FakeRunner( 'int a;\n    a += 2;\n',
+	fakerunner = FakeRunner( 'int a;\n	a += 2;\n',
 		"#include <iconv.h>\n" )
 
 	expected_output = (
@@ -240,9 +240,9 @@ tcc> .L
 #include <iconv.h>
 
 int main(int argc, char **argv, char **env){
-    int a;
-    a += 2;
-    return 0;
+	int a;
+	a += 2;
+	return 0;
 }
 tcc> 
 ''')
@@ -412,7 +412,7 @@ tcc> a = 5;
 tcc> foobar
 [Compile error - type .e to see it.]
 tcc> .u
-[Undone '    foobar'.]
+[Undone '	foobar'.]
 tcc> printf("%i\n",a);
 5
 tcc> 
@@ -438,9 +438,9 @@ tcc> ++a;
 tcc> ++a;
 tcc> ++a;
 tcc> .u
-[Undone '    ++a;'.]
+[Undone '	++a;'.]
 tcc> .u
-[Undone '    ++a;'.]
+[Undone '	++a;'.]
 tcc> printf("%i\n",a);
 6
 tcc> 
@@ -464,7 +464,7 @@ def test_undo_before_beginning():
 	expected_output = (
 r'''tcc> int a = 5;
 tcc> .u
-[Undone '    int a = 5;'.]
+[Undone '	int a = 5;'.]
 tcc> .u
 [Nothing to undo.]
 tcc> .u
@@ -472,7 +472,7 @@ tcc> .u
 tcc> printf("%i\n",a);
 [Compile error - type .e to see it.]
 tcc> .u
-[Undone '    printf("%i\n",a);'.]
+[Undone '	printf("%i\n",a);'.]
 tcc> int b = 7;
 tcc> printf("%i\n",b);
 7
@@ -497,11 +497,11 @@ r'''tcc> int a = 5;
 tcc> #include <unistd.h>
 tcc> ++a;
 tcc> .u
-[Undone '    ++a;'.]
+[Undone '	++a;'.]
 tcc> .u
 [Undone '#include <unistd.h>'.]
 tcc> .u
-[Undone '    int a = 5;'.]
+[Undone '	int a = 5;'.]
 tcc> 
 ''' )
 
@@ -521,9 +521,9 @@ def test_redo_1():
 r'''tcc> int a = 1;
 tcc> ++a;
 tcc> .u
-[Undone '    ++a;'.]
+[Undone '	++a;'.]
 tcc> .r
-[Redone '    ++a;'.]
+[Redone '	++a;'.]
 tcc> printf("%i\n",a);
 2
 tcc> 
@@ -549,13 +549,13 @@ def test_redo_2():
 r'''tcc> int a = 1;
 tcc> ++a;
 tcc> .u
-[Undone '    ++a;'.]
+[Undone '	++a;'.]
 tcc> .u
-[Undone '    int a = 1;'.]
+[Undone '	int a = 1;'.]
 tcc> .r
-[Redone '    int a = 1;'.]
+[Redone '	int a = 1;'.]
 tcc> .r
-[Redone '    ++a;'.]
+[Redone '	++a;'.]
 tcc> printf("%i\n",a);
 2
 tcc> 
@@ -582,15 +582,15 @@ def test_redo_before_beginning():
 r'''tcc> int a = 1;
 tcc> ++a;
 tcc> .u
-[Undone '    ++a;'.]
+[Undone '	++a;'.]
 tcc> .u
-[Undone '    int a = 1;'.]
+[Undone '	int a = 1;'.]
 tcc> .u
 [Nothing to undo.]
 tcc> .r
-[Redone '    int a = 1;'.]
+[Redone '	int a = 1;'.]
 tcc> .r
-[Redone '    ++a;'.]
+[Redone '	++a;'.]
 tcc> printf("%i\n",a);
 2
 tcc> 
@@ -614,9 +614,9 @@ def test_redo_after_end():
 r'''tcc> int a = 1;
 tcc> ++a;
 tcc> .u
-[Undone '    ++a;'.]
+[Undone '	++a;'.]
 tcc> .r
-[Redone '    ++a;'.]
+[Redone '	++a;'.]
 tcc> .r
 [Nothing to redo.]
 tcc> printf("%i\n",a);
@@ -645,17 +645,17 @@ r'''tcc> int a = 5;
 tcc> #include <unistd.h>
 tcc> ++a;
 tcc> .u
-[Undone '    ++a;'.]
+[Undone '	++a;'.]
 tcc> .u
 [Undone '#include <unistd.h>'.]
 tcc> .u
-[Undone '    int a = 5;'.]
+[Undone '	int a = 5;'.]
 tcc> .r
-[Redone '    int a = 5;'.]
+[Redone '	int a = 5;'.]
 tcc> .r
 [Redone '#include <unistd.h>'.]
 tcc> .r
-[Redone '    ++a;'.]
+[Redone '	++a;'.]
 tcc> 
 ''' )
 
@@ -677,11 +677,11 @@ def test_undo_then_new_commands():
 r'''tcc> int a = 5;
 tcc> ++a;
 tcc> .u
-[Undone '    ++a;'.]
+[Undone '	++a;'.]
 tcc> --a;
 tcc> --a;
 tcc> .u
-[Undone '    --a;'.]
+[Undone '	--a;'.]
 tcc> printf("%i\n",a);
 4
 tcc> 
@@ -705,12 +705,12 @@ r'''tcc> int a = 56;
 tcc> printf("%i\n",a);
 56
 tcc> .u
-[Undone '    printf("%i\n",a);'.]
+[Undone '	printf("%i\n",a);'.]
 tcc> .r
-[Redone '    printf("%i\n",a);'.]
+[Redone '	printf("%i\n",a);'.]
 56
 tcc> .u
-[Undone '    printf("%i\n",a);'.]
+[Undone '	printf("%i\n",a);'.]
 tcc> printf("%i\n",12);
 12
 tcc> 
@@ -773,11 +773,11 @@ def test_undo_stderr_then_new_commands():
 r'''tcc> int a = 5;
 tcc> ++a;
 tcc> .u
-[Undone '    ++a;'.]
+[Undone '	++a;'.]
 tcc> --a;
 tcc> --a;
 tcc> .u
-[Undone '    --a;'.]
+[Undone '	--a;'.]
 tcc> fprintf(stderr, "%i\n", a);
 4
 tcc> 

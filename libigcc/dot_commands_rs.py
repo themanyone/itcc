@@ -20,15 +20,15 @@
 from . import source_code_rs as source_code
 from . import copying
 import subprocess
-import glob
 import os
-from os import environ as env
+from glob import glob
 
 # documentation search paths
-docsearch = glob.glob(env.get('HOME') + '/.crustup/toolchains/'
- + 'nightly*/share/doc/rust/html/index.html')
+home = os.environ.get('HOME')
+docsearch = glob( home + '/.rustup/toolchains/nightly*' +
+    '/share/doc/rust/html/std/index.html' )
 
-docs = docsearch[0] if docsearch else '/usr/share/doc/rust/html/index.html'
+docs = docsearch[0] if docsearch else '/usr/share/doc/rust/html/std/index.html'
 
 class IGCCQuitException(Exception):
     pass
@@ -100,7 +100,8 @@ def process( inp, runner ):
         return dot_h( runner )
     elif inp[:3] == ".h ":
         if not os.path.isfile( docs ): return False, False
-        run_process = subprocess.Popen(["xdg-open", docs + "?search=" + inp[3:]],
+        print(docs)
+        run_process = subprocess.Popen(["xdg-open", "file://" + docs + "?search=" + inp[3:]],
         stdout = subprocess.PIPE, stderr = subprocess.PIPE )
         stdout, stderr = run_process.communicate()
         return False, False

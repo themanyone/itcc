@@ -72,7 +72,6 @@ def create_read_line_function( inputfile, prompt ):
         return lambda: read_line_from_file( inputfile, prompt )
 
 def get_temporary_file_name():
-    # write source to input file
     suff = ".exe" if platform.system() == 'Windows' else ""
     outfile = tempfile.NamedTemporaryFile( prefix = 'itcc', suffix = suff )
     outfilename = outfile.name
@@ -202,8 +201,8 @@ class Runner:
 
                 if run_cmp:
                     # print compiler command
-                    if self.options.v > 2:
-                        print("$ " + ( " ".join( subs_compiler_command ) ))
+                    if self.options.v > 1:
+                        print(( " ".join( subs_compiler_command ) ))
                     self.compile_error = run_compile( subs_compiler_command,
                         self )
 
@@ -279,7 +278,7 @@ def parse_args( argv ):
     parser.add_argument( "-v", action="count", default=0,
         help = "Increase verbosity." )
     parser.add_argument( "-e", action="store_true",
-        help = "Show errors about <eof> and empty blocks." )
+        help = "Show errors about empty blocks." )
     parser.add_argument( "-I", dest="INCLUDE", action="append",
         help = "Add INCLUDE to the list of directories to " +
             "be searched for header files." )

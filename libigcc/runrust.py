@@ -39,12 +39,11 @@ from . import version
 # One day these will be in a config file
 
 prompt = "rust> "
-compiler_command = ( 'rustc', "-o", "$outfile", "-",
-    "$libs" )
+compiler_command = ( 'rustc', "$lib_dirs", "$libs", "-o", "$outfile", "-" )
 
-include_dir_command = ( "-I $cmd", )
-lib_dir_command = ( "-L $cmd", )
-lib_command = ( "-l $cmd", )
+include_dir_command = ( "-I$cmd", )
+lib_dir_command = ( "-L$cmd", )
+lib_command = ( "-l$cmd", )
 
 #---------------
 
@@ -72,7 +71,8 @@ def create_read_line_function( inputfile, prompt ):
         return lambda: read_line_from_file( inputfile, prompt )
 
 def get_temporary_file_name():
-    outfile = tempfile.NamedTemporaryFile( prefix = 'irust-exe' )
+    suff = ".exe" if platform.system() == 'Windows' else ""
+    outfile = tempfile.NamedTemporaryFile( prefix = 'irust', suffix = suff )
     outfilename = outfile.name
     outfile.close()
     return outfilename
@@ -103,7 +103,7 @@ def get_compiler_command( options, extra_options, outfilename ):
 
 
 def run_compile( subs_compiler_command, runner ):
-
+    #subprocess.run( 'source "$HOME/.cargo/env"', shell=True )
     compile_process = subprocess.Popen( subs_compiler_command,
         stdin = subprocess.PIPE, stderr = subprocess.PIPE )
     source = source_code.get_full_source(runner)
@@ -200,8 +200,8 @@ class Runner:
 
                 if run_cmp:
                     # print compiler command
-                    if self.options.v > 2:
-                        print("$ " + ( " ".join( subs_compiler_command ) ))
+                    if self.options.v > 1:
+                        print(( " ".join( subs_compiler_command ) ))
                     self.compile_error = run_compile( subs_compiler_command,
                         self )
 

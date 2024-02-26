@@ -72,7 +72,8 @@ def create_read_line_function( inputfile, prompt ):
         return lambda: read_line_from_file( inputfile, prompt )
 
 def get_temporary_file_name():
-    outfile = tempfile.NamedTemporaryFile( prefix = 'igcc-exe' )
+    suff = ".exe" if platform.system() == 'Windows' else ""
+    outfile = tempfile.NamedTemporaryFile( prefix = 'igcc', suffix = suff )
     outfilename = outfile.name
     outfile.close()
     return outfilename
@@ -199,8 +200,8 @@ class Runner:
 
                 if run_cmp:
                     # print compiler command
-                    if self.options.v > 2:
-                        print("$ " + ( " ".join( subs_compiler_command ) ))
+                    if self.options.v > 1:
+                        print(( " ".join( subs_compiler_command ) ))
                     self.compile_error = run_compile( subs_compiler_command,
                         self )
 
@@ -318,7 +319,7 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
             Runner(options, extra_args, inputfile, exefilename).do_run(session_args)
         except Exception as e:
             print(e)
-        ret = "quit"
+            ret = "quit"
 
     if os.path.isfile(exefilename):
         os.remove(exefilename)
