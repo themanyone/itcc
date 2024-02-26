@@ -39,15 +39,15 @@ from . import version
 # One day these will be in a config file
 
 prompt = "hare> "
-compiler_command = ( 'hare', "build", "$libs", "-o", "$outfile", "$infile" )
+compiler_command = ( "hare", "build", "-vv", "$lib_dirs", "$libs", "-o", "$outfile", "$infile" )
 
-include_dir_command = ( "-I $cmd", )
-lib_dir_command = ( "-L $cmd", )
-lib_command = ( "-l $cmd", )
+include_dir_command = ( "-I$cmd", )
+lib_dir_command = ( "-L$cmd", )
+lib_command = ( "-l$cmd", )
 
 #---------------
 
-incl_re = re.compile( r"\s*use\s" )
+incl_re = re.compile( r"\s*(use|fn|@\S+)\s" )
 
 #---------------
 
@@ -88,13 +88,13 @@ def append_multiple( single_cmd, cmdlist, ret ):
                 ret.append(
                     cmd_part.replace( "$cmd" , cmd ) )
 
-def get_compiler_command( options, extra_options, infilename, outfilename ):
+def get_compiler_command( options, extra_options, outfilename, infilename ):
     ret = []
 
     for part in compiler_command:
         if part == "$infile":
             ret.append( part.replace( "$infile", infilename ) )
-        #elif part == "-o":
+        #if part == "-o":
         #    append_multiple( extra_options, ["-o"], ret)
         elif part == "$lib_dirs":
             append_multiple( lib_dir_command, options.LIBDIR,ret )
@@ -109,11 +109,13 @@ def get_compiler_command( options, extra_options, infilename, outfilename ):
 def run_compile( subs_compiler_command, runner, srcfilename ):
 
     source = source_code.get_full_source(runner)
-    if runner.options.v > 1:
+    if runner.options.v > 2:
         print(source)
     with open(srcfilename, 'w') as file:
         file.write(source)
+        file.close()
     compile_process = subprocess.Popen( subs_compiler_command,
+        stdin = subprocess.PIPE, stdout = subprocess.PIPE, 
         stderr = subprocess.PIPE )
     stdoutdata, stderrdata = compile_process.communicate()
 
@@ -168,7 +170,7 @@ class UserInput:
 
 class Runner:
 
-    def __init__( self, options, extra_options, inputfile, srcfilename, exefilename ):
+    def __init__( self, options, extra_options, inputfile, exefilename, srcfilename ):
         self.options = options
         self.extra_options = extra_options
         self.inputfile = inputfile
@@ -183,7 +185,7 @@ class Runner:
     def do_run( self, session_args ):
         read_line = create_read_line_function( self.inputfile, prompt )
         subs_compiler_command = get_compiler_command(
-            self.options, self.extra_options, self.srcfilename, self.exefilename )
+            self.options, self.extra_options, self.exefilename, self.srcfilename )
 
         inp = 1
         while inp is not None:
@@ -206,17 +208,18 @@ class Runner:
 
                 if run_cmp:
                     # print compiler command
-                    if self.options.v > 2:
+                    if self.options.v > 1:
                         print("$ " + ( " ".join( subs_compiler_command ) ))
                     self.compile_error = run_compile( subs_compiler_command,
                         self, self.srcfilename )
 
                     if self.compile_error is not None:
                         err = self.compile_error.decode().strip('\n')
-                        if self.options.v > 1:
+                        if self.options.v > 2:
                             print(err)
                         elif (err.find("empty block") < 0
-                          and err.find("end of file") < 0) or self.options.e:
+                          and err.find("end of file") < 0
+                          and err.find("e', found '}'") < 0) or self.options.e:
                             print("[Compile error - type .e to see it.]")
                     else:
                         if self.options.v > 0:
@@ -319,10 +322,9 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
             ret = "normal"
             if print_welc:
                 print_welcome()
-            Runner(options, extra_args, inputfile, srcfilename, exefilename).do_run(session_args)
+            Runner(options, extra_args, inputfile, exefilename, srcfilename).do_run(session_args)
         except Exception as e:
-            if hasattr(e, '__len__'):
-                print(e)
+            print(e)
             ret = "quit"
 
     if os.path.isfile(exefilename):

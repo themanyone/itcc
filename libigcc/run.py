@@ -207,7 +207,7 @@ class Runner:
 
                     if self.compile_error is not None:
                         err = self.compile_error.decode().strip('\n')
-                        if self.options.v > 1:
+                        if self.options.v > 2:
                             print(err)
                         elif (err.find("empty block") < 0
                           and err.find("end of file") < 0) or self.options.e:

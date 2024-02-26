@@ -1,2 +1,2 @@
 #!/bin/bash
-ln -s $(pwd)/i* ~/.local/bin/
+ln -sf $(pwd)/i* ~/.local/bin/
