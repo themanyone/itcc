@@ -56,7 +56,7 @@ Interactive, concise, regex-aware preprocessor (icrap) *is standard C* (using tc
  Python, use tab or indent 4 spaces instead of adding curly braces. Use two spaces 
  instead of parenthesis. Since braces are added automatically, it saves typing. There 
  are also some exciting, new go-like language features that really simplify C coding. 
- Get crap from https://themanyone.github.io/crap/ $ ./icrap -lm Released under GNU GPL 
+ Get crap from https://themanyone.github.io/crap/ Released under GNU GPL 
  version 2 or later, with NO WARRANTY. Type ".h" for help.
 
  $./icrap -lm
@@ -209,9 +209,10 @@ management, and a small runtime. It's well-suited for low-level, high-performanc
 tasks like operating systems, system tools, compilers, and networking software. Now 
 you can play with it interactively.
 
+Hare Website:   https://git.sr.ht/~sircmpwn/harelang.org
+
 Hare compiler:  git clone https://git.sr.ht/~sircmpwn/harec
 Hare std libs:  git clone https://git.sr.ht/~sircmpwn/hare
-Hare Website:   https://git.sr.ht/~sircmpwn/harelang.org
 Depends on QBE: https://c9x.me/compile/code.html
 Requires scdoc: https://git.sr.ht/~sircmpwn/scdoc
 

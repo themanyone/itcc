@@ -78,7 +78,7 @@ dot_commands = {
     ".s" : ( "Show list of lib names to use", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
-    ".L" : ( "List the C program as given to the compiler", dot_L ),
+    ".L" : ( "List the generated C code fed to the compiler", dot_L ),
     ".r" : ( "Redo undone command", dot_r ),
     ".u" : ( "Undo previous command", dot_u ),
     ".w" : ( "Show warranty information", dot_w ),
