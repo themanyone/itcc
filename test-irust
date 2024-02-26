@@ -1,0 +1,882 @@
+#!/usr/bin/python
+
+# igcc - a read-eval-print loop for C/C++ programmers
+#
+# Copyright (C) 2009 Andy Balaam
+# with python3 and tcc support by Henry Kroll III
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA 02110-1301, USA.
+
+import re
+import os
+import libigcc.runrust
+from libigcc.runrust import UserInput
+import libigcc.source_code_rs
+import libigcc.version
+
+class FakeWriteableFile:
+	def __init__( self ):
+		self.lines = []
+
+	def write( self, line ):
+		self.lines.append( line )
+
+class FakeReadableFile:
+	def __init__( self, lines ):
+		self.lines = lines
+
+	def readline( self ):
+		if len( self.lines ) == 0:
+			return None
+		line = self.lines[0]
+		self.lines = self.lines[1:]
+		return line
+
+def assert_strings_equal( str1, str2 ):
+	if str1 == str2:
+		return
+
+	raise AssertionError( "\n" + str1 + "\n!=\n" + str2 )
+
+def assert_strings_match( string, re_string ):
+	cmp_re = re.compile( re_string, re.DOTALL )
+
+	if cmp_re.match( string ):
+		return
+
+	raise AssertionError( "\n" + string
+		+ "\ndoes not match regular expression\n" + re_string )
+
+def run_program( commands, expected_output, print_welcome = False,
+		argv = None ):
+
+	outputfile = FakeWriteableFile()
+	stdinfile = FakeReadableFile( commands )
+	ret = libigcc.runrust.run( outputfile, stdinfile, print_welcome, argv )
+
+	assert_strings_equal( "".join( outputfile.lines ), expected_output )
+
+	return ret
+
+def run_program_regex_output( commands, expected_output_re ):
+	outputfile = FakeWriteableFile()
+	stdinfile = FakeReadableFile( commands )
+	libigcc.runrust.run( outputfile, stdinfile, False )
+
+	assert_strings_match( "".join( outputfile.lines ), expected_output_re )
+
+def test_print_argv():
+	commands = ["use std::env;",
+ "use std::io;",
+ "    let args: Vec<String> = env::args().collect();",
+ "    println!(\"{}\", args[1]);"]
+	expected_output = """rust> use std::env;
+rust> use std::io;
+rust>     let args: Vec<String> = env::args().collect();
+rust>     println!("{}", args[1]);
+foo
+rust> 
+""";
+	run_program( commands, expected_output, False, ['--', 'foo'] )
+
+def test_declare_var():
+	commands = [ "let a = 0;" ]
+	expected_output = 'rust> let a = 0;\nrust> \n'
+	run_program( commands, expected_output )
+
+def test_declare_var_assign():
+	commands = [ "let a = 10;" ]
+	expected_output = 'rust> let a = 10;\nrust> \n'
+	run_program( commands, expected_output )
+
+def test_declare_and_assign_var_then_print():
+	commands = [ "let a = 13;",
+		'println!( "{}", a );' ]
+
+	expected_output = (
+'''rust> let a = 13;
+rust> println!( "{}", a );
+13
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_print_twice():
+	commands = [ "let mut a = 10;",
+		'println!( "{}", a );',
+		'a += 1;',
+		'println!( "{}", a );' ]
+	expected_output = (
+'''rust> let mut a = 10;
+rust> println!( "{}", a );
+10
+rust> a += 1;
+rust> println!( "{}", a );
+11
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+def test_compile_error():
+	commands = [ "let mut a" ] # no semicolon
+
+	expected_output = (
+'''rust> let mut a
+[Compile error - type .e to see it.]
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+def test_compile_error_display():
+	commands = [
+		"let mut a", # no semicolon
+		".e" ]
+
+	# Just look for a string "xpected" in the compiler output.
+	expected_output_re = (
+u'''.*expected.*''' )
+
+	run_program_regex_output( commands, expected_output_re )
+
+
+def test_include():
+	commands = [
+		'use std::fs;',
+		'let c_str = fs::read_to_string("libigcc/version.py");',
+		'println!( "{:?}", c_str );']
+	expected_output = (
+r'''rust> use std::fs;
+rust> let c_str = fs::read_to_string("libigcc/version.py");
+rust> println!( "{:?}", c_str );
+Ok("VERSION=\"0.3\"\n")
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+def test_multiple_repeated_includes():
+	commands = [
+'use std::fs::File;',
+'use std::io;',
+'use std::io::prelude::*;',
+'use std::str;',
+'',
+'    fn rdfile(file: &str) -> io::Result<()> {',
+'        let f = File::open(file);',
+'        let mut buffer = [0; 10];',
+'        let n = f.expect("REASON").read(&mut buffer)?;',
+'        println!("The bytes: {:?}", &buffer[..n]);',
+'        Ok(())',
+'    }',
+'    let _ = rdfile("libigcc/version.py");',
+]
+	expected_output = (
+'''rust> use std::fs::File;
+rust> use std::io;
+rust> use std::io::prelude::*;
+rust> use std::str;
+rust> 
+rust>     fn rdfile(file: &str) -> io::Result<()> {
+rust>         let f = File::open(file);
+rust>         let mut buffer = [0; 10];
+rust>         let n = f.expect("REASON").read(&mut buffer)?;
+rust>         println!("The bytes: {:?}", &buffer[..n]);
+rust>         Ok(())
+rust>     }
+rust>     let _ = rdfile("libigcc/version.py");
+The bytes: [86, 69, 82, 83, 73, 79, 78, 61, 34, 48]
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+def test_list_program():
+	commands = [
+		'let mut a = 0;',
+		'a += 2;',
+		'use std::str;',
+		'.l' ]
+
+	expected_output = (
+'''rust> let mut a = 0;
+rust> a += 2;
+rust> use std::str;
+rust> .l
+use std::str;
+
+    let mut a = 0;
+    a += 2;
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+class FakeRunner:
+	def __init__( self, user_commands_string, user_includes_string ):
+		self.user_commands_string = user_commands_string
+		self.user_includes_string = user_includes_string
+
+	def get_user_commands_string( self ):
+		return self.user_commands_string
+
+	def get_user_includes_string( self ):
+		return self.user_includes_string
+
+def test_list_full_program():
+	commands = [
+		'let mut a = 0;',
+		'a += 2;',
+		'use std::str;',
+		'.l' ]
+
+	fakerunner = FakeRunner( 'let mut a;\na += 2;\n',
+		"#include <vector>\n" )
+
+	expected_output = (
+'''rust> let mut a = 0;
+rust> a += 2;
+rust> use std::str;
+rust> .l
+use std::str;
+
+    let mut a = 0;
+    a += 2;
+rust> 
+''')
+
+	run_program( commands, expected_output )
+
+def test_help_message():
+	commands = [
+		'.h' ]
+
+	expected_output_re = ".*Show this help message"
+
+	run_program_regex_output( commands, expected_output_re )
+
+def test_quit():
+	commands = [
+		'.q' ]
+
+	expected_output = "rust> .q\n\n"
+
+	ret = run_program( commands, expected_output )
+
+	assert_strings_equal( ret, "quit" )
+
+def test_welcome_message():
+	commands = []
+	expected_output = (
+'''irust $version
+Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get rust from http://rust-lang.org
+Type ".h" for help.
+
+rust> 
+'''.replace( "$version", libigcc.version.VERSION ))
+
+	run_program( commands, expected_output, True )
+
+def test_include_dir_on_cmd_line():
+	commands = [ 'extern "C" { fn hello(); }',
+		'unsafe {',
+		'   hello();',
+		'}', ]
+	expected_output = (
+'''rust> extern "C" { fn hello(); }
+rust> unsafe {
+rust>    hello();
+rust> }
+Hello, 
+rust> 
+''' )
+
+	argv = [ "-L.", "-lhello" ]
+	if not os.path.isfile("libhello.so"):
+		os.system("tcc -Itest/cpp -r test/cpp/hello.h -o libhello.so")
+	run_program( commands, expected_output, argv = argv )
+
+
+def test_2_include_dirs_on_cmd_line():
+	commands = [ 'extern "C" { fn hello(); }',
+		'unsafe {',
+		'   hello();',
+		'}', ]
+
+	expected_output = (
+'''rust> extern "C" { fn hello(); }
+rust> unsafe {
+rust>    hello();
+rust> }
+Hello, 
+rust> 
+''' )
+
+	argv = [ "-L.", "-lhello", "-lworld" ]
+	if not os.path.isfile("libworld.so"):
+		os.system("tcc -Itest/cpp -r test/cpp2/world.h -o libworld.so")
+	run_program( commands, expected_output, argv = argv )
+	if os.path.isfile('libhello.so'):
+		os.remove('libhello.so')
+	if os.path.isfile('libworld.so'):
+		os.remove('libworld.so')
+
+
+def test_lib():
+	commands = [ 'let mut a = 4.max(6);',
+		'println!("{}", a);', ]
+
+	expected_output = (
+'''rust> let mut a = 4.max(6);
+rust> println!("{}", a);
+6
+rust> 
+''' )
+
+	# argv = [ "-lm" ]
+
+	run_program( commands, expected_output )
+
+
+def test_print_license():
+	commands = [ '.c' ]
+
+	expected_output_re = (
+r'''rust\> \.c
+.*GNU GENERAL PUBLIC LICENSE.*
+rust\> 
+''' )
+
+	run_program_regex_output( commands, expected_output_re )
+
+
+
+def test_print_warranty():
+	commands = [ '.w' ]
+
+	expected_output_re = (
+r'''rust\> \.w
+.*Disclaimer of Warranty.*
+rust\> 
+''' )
+
+	run_program_regex_output( commands, expected_output_re )
+
+
+def test_runner_get_user_input():
+	runner = libigcc.runrust.Runner( None, None, None, None )
+	runner.user_input = [
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND),
+		UserInput("2", UserInput.COMMAND) ]
+	runner.input_num = 3
+	assert( tuple( runner.get_user_input() ) == (
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND),
+		UserInput("2", UserInput.COMMAND) ) )
+
+	runner.input_num = 2
+	assert( tuple( runner.get_user_input() ) == (
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND) ) )
+
+	runner.input_num = 1
+	assert( tuple( runner.get_user_input() ) == (
+		UserInput("0", UserInput.COMMAND), ) )
+
+
+def test_runner_get_user_commands():
+	runner = libigcc.runrust.Runner( None, None, None, None )
+	runner.user_input = [
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND),
+		UserInput("X", UserInput.INCLUDE),
+		UserInput("2", UserInput.COMMAND) ]
+	runner.input_num = 4
+	assert( tuple( runner.get_user_commands() ) == ( "0", "1", "2" ) )
+
+	runner.input_num = 2
+	assert( tuple( runner.get_user_commands() ) == ( "0", "1" ) )
+
+	runner.input_num = 1
+	assert( tuple( runner.get_user_commands() ) == ( "0", ) )
+
+
+def test_undo_1():
+	commands = [
+		'let mut a = 0;',
+		'a = 5;',
+		'foobar',
+		'.u',
+		'println!("{}", a);',
+		]
+
+	expected_output = (
+r'''rust> let mut a = 0;
+rust> a = 5;
+rust> foobar
+[Compile error - type .e to see it.]
+rust> .u
+[Undone '    foobar'.]
+rust> println!("{}", a);
+5
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_2():
+	commands = [
+		'let mut a = 5;',
+		'a += 1;',
+		'a += 1;',
+		'1 += 1;',
+		'.u',
+		'.u',
+		'println!("{}", a);',
+		]
+
+	expected_output = (
+r'''rust> let mut a = 5;
+rust> a += 1;
+rust> a += 1;
+rust> 1 += 1;
+[Compile error - type .e to see it.]
+rust> .u
+[Undone '    1 += 1;'.]
+rust> .u
+[Undone '    a += 1;'.]
+rust> println!("{}", a);
+6
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_before_beginning():
+	commands = [
+		'let mut a = 5;',
+		'.u',
+		'.u',
+		'.u',
+		'println!("{}", a);',
+		'.u',
+		'let b = 7;',
+		'println!("{}", b);',
+		]
+
+	expected_output = (
+r'''rust> let mut a = 5;
+rust> .u
+[Undone '    let mut a = 5;'.]
+rust> .u
+[Nothing to undo.]
+rust> .u
+[Nothing to undo.]
+rust> println!("{}", a);
+[Compile error - type .e to see it.]
+rust> .u
+[Undone '    println!("{}", a);'.]
+rust> let b = 7;
+rust> println!("{}", b);
+7
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_includes_and_commands():
+	commands = [
+		'#![feature(new_uninit)]',
+		'let mut a = 5;',
+		'a += 1;',
+		'.u',
+		'.u',
+		'.u',
+		]
+
+	expected_output = (
+r'''rust> #![feature(new_uninit)]
+rust> let mut a = 5;
+rust> a += 1;
+rust> .u
+[Undone '    a += 1;'.]
+rust> .u
+[Undone '    let mut a = 5;'.]
+rust> .u
+[Undone '    #![feature(new_uninit)]'.]
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_redo_1():
+	commands = [
+		'let mut a = 1;',
+		'a += 1;',
+		'.u',
+		'.r',
+		'println!("{}", a);',
+		]
+
+	expected_output = (
+r'''rust> let mut a = 1;
+rust> a += 1;
+rust> .u
+[Undone '    a += 1;'.]
+rust> .r
+[Redone '    a += 1;'.]
+rust> println!("{}", a);
+2
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+
+
+def test_redo_2():
+	commands = [
+		'let mut a = 1;',
+		'a += 1;',
+		'.u',
+		'.u',
+		'.r',
+		'.r',
+		'println!("{}", a);',
+		]
+
+	expected_output = (
+r'''rust> let mut a = 1;
+rust> a += 1;
+rust> .u
+[Undone '    a += 1;'.]
+rust> .u
+[Undone '    let mut a = 1;'.]
+rust> .r
+[Redone '    let mut a = 1;'.]
+rust> .r
+[Redone '    a += 1;'.]
+rust> println!("{}", a);
+2
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+
+
+def test_redo_before_beginning():
+	commands = [
+		'let mut a = 1;',
+		'a += 1;',
+		'.u',
+		'.u',
+		'.u',
+		'.r',
+		'.r',
+		'println!("{}", a);',
+		]
+
+	expected_output = (
+r'''rust> let mut a = 1;
+rust> a += 1;
+rust> .u
+[Undone '    a += 1;'.]
+rust> .u
+[Undone '    let mut a = 1;'.]
+rust> .u
+[Nothing to undo.]
+rust> .r
+[Redone '    let mut a = 1;'.]
+rust> .r
+[Redone '    a += 1;'.]
+rust> println!("{}", a);
+2
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+
+def test_redo_after_end():
+	commands = [
+		'let mut a = 1;',
+		'a += 1;',
+		'.u',
+		'.r',
+		'.r',
+		'println!("{}", a);',
+		]
+
+	expected_output = (
+r'''rust> let mut a = 1;
+rust> a += 1;
+rust> .u
+[Undone '    a += 1;'.]
+rust> .r
+[Redone '    a += 1;'.]
+rust> .r
+[Nothing to redo.]
+rust> println!("{}", a);
+2
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_redo_includes_and_commands():
+	commands = [
+		'use std::env;',
+		'let args: Vec<String> = env::args().collect();',
+		'for argument in args.iter().skip(1) {',
+		'   println!("{argument}");',
+		'}',
+		'.u',
+		'.u',
+		'.u',
+		'.u',
+		'.u',
+		'.r',
+		'.r',
+		'.r',
+		'.r',
+		'.r',
+		]
+
+	expected_output = (
+r'''rust> use std::env;
+rust> let args: Vec<String> = env::args().collect();
+rust> for argument in args.iter().skip(1) {
+rust>    println!("{argument}");
+rust> }
+foo
+bar
+baz
+rust> .u
+[Undone '    }'.]
+rust> .u
+[Undone '       println!("{argument}");'.]
+rust> .u
+[Undone '    for argument in args.iter().skip(1) {'.]
+rust> .u
+[Undone '    let args: Vec<String> = env::args().collect();'.]
+rust> .u
+[Undone 'use std::env;'.]
+rust> .r
+[Redone 'use std::env;'.]
+rust> .r
+[Redone '    let args: Vec<String> = env::args().collect();'.]
+rust> .r
+[Redone '    for argument in args.iter().skip(1) {'.]
+rust> .r
+[Redone '       println!("{argument}");'.]
+rust> .r
+[Redone '    }'.]
+foo
+bar
+baz
+rust> 
+''' )
+
+	run_program( commands, expected_output, False, ['--', 'foo', 'bar', 'baz'] )
+
+
+def test_undo_then_new_commands():
+	commands = [
+		'let mut a = 5;',
+		'a += 1;',
+		'.u',
+		'a -= 1;',
+		'a -= 1;',
+		'.u',
+		'println!("{}", a);',
+		]
+
+	expected_output = (
+r'''rust> let mut a = 5;
+rust> a += 1;
+rust> .u
+[Undone '    a += 1;'.]
+rust> a -= 1;
+rust> a -= 1;
+rust> .u
+[Undone '    a -= 1;'.]
+rust> println!("{}", a);
+4
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_redo_with_output():
+	commands = [
+		'let mut a = 56;',
+		'println!("{}", a);',
+		'.u',
+		'.r',
+		'.u',
+		'println!("{}", 12);',
+		]
+
+	expected_output = (
+r'''rust> let mut a = 56;
+rust> println!("{}", a);
+56
+rust> .u
+[Undone '    println!("{}", a);'.]
+rust> .r
+[Redone '    println!("{}", a);'.]
+56
+rust> .u
+[Undone '    println!("{}", a);'.]
+rust> println!("{}", 12);
+12
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+
+def test_print_stderr_twice():
+	commands = [ "let mut a = 10;",
+		'eprint!("{}", a);',
+		"a += 1;",
+		'eprint!("{}", a);' ]
+
+	expected_output = (
+'''rust> let mut a = 10;
+rust> eprint!("{}", a);
+10
+rust> a += 1;
+rust> eprint!("{}", a);
+11
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_print_stderr_stdout():
+	commands = [ "let mut a = 10;",
+		'eprint!("{}", a);',
+		"a += 1;",
+		'println!("{}", a);' ]
+
+	expected_output = (
+'''rust> let mut a = 10;
+rust> eprint!("{}", a);
+10
+rust> a += 1;
+rust> println!("{}", a);
+11
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_stderr_then_new_commands():
+	commands = [
+		'let mut a = 5;',
+		'a += 1;',
+		'.u',
+		'a -= 1;',
+		'a -= 1;',
+		'.u',
+		'eprint!("{}", a);',
+		]
+
+	expected_output = (
+r'''rust> let mut a = 5;
+rust> a += 1;
+rust> .u
+[Undone '    a += 1;'.]
+rust> a -= 1;
+rust> a -= 1;
+rust> .u
+[Undone '    a -= 1;'.]
+rust> eprint!("{}", a);
+4
+rust> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def main():
+	test_print_argv()
+	test_declare_var()
+	test_declare_var_assign()
+	test_declare_and_assign_var_then_print()
+	test_print_twice()
+	test_compile_error()
+	test_compile_error_display()
+	test_include()
+	test_multiple_repeated_includes()
+	test_list_program()
+	test_list_full_program()
+	test_help_message();
+	test_quit()
+	test_welcome_message()
+	test_include_dir_on_cmd_line()
+	test_2_include_dirs_on_cmd_line()
+	test_lib()
+	test_print_license()
+	test_print_warranty()
+	test_runner_get_user_input()
+	test_runner_get_user_commands()
+	test_undo_1()
+	test_undo_2()
+	test_undo_before_beginning()
+	test_undo_includes_and_commands()
+	test_redo_1()
+	test_redo_2()
+	test_redo_before_beginning()
+	test_redo_after_end()
+	test_redo_includes_and_commands()
+	test_undo_then_new_commands()
+	test_undo_redo_with_output()
+	test_print_stderr_twice()
+	test_print_stderr_stdout()
+	test_undo_stderr_then_new_commands()
+
+	#test_readline_history();
+	#test_print_command();
+	#test_edit_in_vim();
+	#test_compile_warning()
+	#test_remove_compile_error_message()
+
+	print("All tests passed.")
+
+
+if __name__ == "__main__":
+	main()
+
