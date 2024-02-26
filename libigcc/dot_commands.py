@@ -69,6 +69,7 @@ dot_commands = {
     ".c" : ( "Show copying information", dot_c ),
     ".e" : ( "Show the last compile errors/warnings", dot_e ),
     ".h" : ( "Show this help message", None ),
+    ".h [lib]" : ( "Show help about C [cmd or lib]", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
     ".L" : ( "List the whole program as given to the compiler", dot_L ),

@@ -25,10 +25,13 @@ from glob import glob
 
 # documentation search paths
 home = os.environ.get('HOME')
-docsearch = glob( home + '/.rustup/toolchains/nightly*' +
-    '/share/doc/rust/html/std/index.html' )
-
-docs = docsearch[0] if docsearch else '/usr/share/doc/rust/html/std/index.html'
+docs = glob( home + '/.rustup/toolchains/nightly*/share/doc/rust/html/std/index.html' )
+docs.append('/usr/share/doc/rust/html/std/index.html')
+docs_url = 'https://doc.rust-lang.org/std/index.html'
+for doc in docs:
+    if os.path.isfile( doc ):
+        docs_url = "file://" + doc
+        break
 
 class IGCCQuitException(Exception):
     pass
@@ -78,12 +81,12 @@ dot_commands = {
     ".c" : ( "Show copying information", dot_c ),
     ".e" : ( "Show the last compile errors/warnings", dot_e ),
     ".h" : ( "Show this help message", None ),
-    ".h [lib]" : ( "Show help about C [cmd or lib]", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
     ".L" : ( "List the whole program as given to the compiler", dot_L ),
     ".r" : ( "Redo undone command", dot_r ),
     ".u" : ( "Undo previous command", dot_u ),
+    ".v" : ( "View Language Documentation", None ),
     ".w" : ( "Show warranty information", dot_w ),
     }
 
@@ -98,10 +101,8 @@ def dot_h( runner ):
 def process( inp, runner ):
     if inp == ".h":
         return dot_h( runner )
-    elif inp[:3] == ".h ":
-        if not os.path.isfile( docs ): return False, False
-        print(docs)
-        run_process = subprocess.Popen(["xdg-open", "file://" + docs + "?search=" + inp[3:]],
+    if inp == ".v":
+        run_process = subprocess.Popen(["xdg-open", docs_url],
         stdout = subprocess.PIPE, stderr = subprocess.PIPE )
         stdout, stderr = run_process.communicate()
         return False, False
