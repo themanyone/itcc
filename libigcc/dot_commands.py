@@ -51,7 +51,6 @@ def dot_r( runner ):
     else:
         print("[Nothing to redo.]")
         return False, False
-        
 
 def dot_u( runner ):
     undone_line = runner.undo()
@@ -99,4 +98,3 @@ def process( inp, runner ):
             return dot_commands[cmd][1]( runner )
 
     return True, True
-

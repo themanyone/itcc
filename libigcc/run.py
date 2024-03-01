@@ -104,11 +104,10 @@ def get_compiler_command( options, extra_options, outfilename ):
 
 
 def run_compile( subs_compiler_command, runner ):
-    # print("$ " + ( " ".join( subs_compiler_command ) ))
     compile_process = subprocess.Popen( subs_compiler_command,
         stdin = subprocess.PIPE, stderr = subprocess.PIPE )
     source = source_code.get_full_source(runner)
-    if runner.options.v > 1:
+    if runner.options.v > 2:
         print(source)
     stdoutdata, stderrdata = compile_process.communicate(
         source.encode('utf-8') )

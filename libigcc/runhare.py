@@ -39,7 +39,7 @@ from . import version
 # One day these will be in a config file
 
 prompt = "hare> "
-compiler_command = ( "hare", "build", "-vv", "$lib_dirs", "$libs", "-o", "$outfile", "$infile" )
+compiler_command = ( "hare", "build", "-vv", "$lib_dirs", "$libs", "-o", "$outfile", "$srcfile" )
 
 include_dir_command = ( "-I$cmd", )
 lib_dir_command = ( "-L$cmd", )
@@ -88,12 +88,12 @@ def append_multiple( single_cmd, cmdlist, ret ):
                 ret.append(
                     cmd_part.replace( "$cmd" , cmd ) )
 
-def get_compiler_command( options, extra_options, outfilename, infilename ):
+def get_compiler_command( options, extra_options, srcfilename, exefilename ):
     ret = []
 
     for part in compiler_command:
-        if part == "$infile":
-            ret.append( part.replace( "$infile", infilename ) )
+        if part == "$srcfile":
+            ret.append( part.replace( "$srcfile", srcfilename ) )
         #if part == "-o":
         #    append_multiple( extra_options, ["-o"], ret)
         elif part == "$lib_dirs":
@@ -101,8 +101,7 @@ def get_compiler_command( options, extra_options, outfilename, infilename ):
         elif part == "$libs":
             append_multiple( lib_command, options.LIB, ret )
         else:
-            ret.append( part.replace( "$outfile", outfilename ) )
-
+            ret.append( part.replace( "$outfile", exefilename ) )
     return ret
 
 
@@ -170,7 +169,7 @@ class UserInput:
 
 class Runner:
 
-    def __init__( self, options, extra_options, inputfile, exefilename, srcfilename ):
+    def __init__( self, options, extra_options, inputfile, srcfilename, exefilename ):
         self.options = options
         self.extra_options = extra_options
         self.inputfile = inputfile
@@ -185,7 +184,7 @@ class Runner:
     def do_run( self, session_args ):
         read_line = create_read_line_function( self.inputfile, prompt )
         subs_compiler_command = get_compiler_command(
-            self.options, self.extra_options, self.exefilename, self.srcfilename )
+            self.options, self.extra_options, self.srcfilename, self.exefilename )
 
         inp = 1
         while inp is not None:
@@ -211,7 +210,7 @@ class Runner:
                     if self.options.v > 1:
                         print("$ " + ( " ".join( subs_compiler_command ) ))
                     self.compile_error = run_compile( subs_compiler_command,
-                        self, self.srcfilename )
+                    self, self.srcfilename )
 
                     if self.compile_error is not None:
                         err = self.compile_error.decode().strip('\n')
@@ -322,7 +321,7 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
             ret = "normal"
             if print_welc:
                 print_welcome()
-            Runner(options, extra_args, inputfile, exefilename, srcfilename).do_run(session_args)
+            Runner(options, extra_args, inputfile, srcfilename, exefilename).do_run(session_args)
         except Exception as e:
             print(e)
             ret = "quit"

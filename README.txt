@@ -1,14 +1,14 @@
 Interactive TCC
 ===============
 
-Make programming more like Python. Now with Rust support!
+Make programming more like Python.
 
-An command-line shell for C, C++, Rust, and the concise, regex-aware CPP (CRAP). Also 
-known as an evaluation context, or read-eval-print loop (REPL), the shell allows 
-programers to type commands and see immediate results.
+An command-line shell for C, C++, Rust, Hare, Zig, and the concise, regex-aware CPP 
+(CRAP). Also known as an evaluation context, or read-eval-print loop (REPL), the shell 
+allows programers to type commands and see immediate results.
 
 About this project. Interactive TCC (itcc) is a small python3 utility originally 
-forked from Interactive GCC (igcc). And we keep adding other languages as well. We do 
+forked from Interactive GCC (igcc). And we keep adding other languages to it. We do 
 our best to make the code work for us, but it comes with NO WARRANTEEs. You are free 
 to share and modify free software in according with the GNU General Public License 
 (GPL) Version 2. See the notice at the bottom of this page and COPYING.txt for 
@@ -70,9 +70,8 @@ Interactive, concise, regex-aware preprocessor (icrap) *is standard C* (using tc
  4 squared is 16
  crap> |
 
-Supply includes and libs on the command line. Crap is compatible with glib-2.0, 
-plugins, etc. Test code without the compile step. Add extra CFLAGS and args. It's all 
-free.
+Supply includes and libs on the command line. You can link against glib-2.0, plugins, 
+etc. Test code without the compile step. Add extra CFLAGS and args. It's all free.
 
  icrap $(pkg-config --cflags --libs glib-2.0) -std=c11 -g -Wall -- foo myargs
  crap> .l
@@ -251,7 +250,19 @@ Interactive hare sssion:
         tv_nsec: i64,
  };
  hare> |
- 
+
+Interactive Zig
+===============
+
+Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get zig from distro package or https://ziglang.org/
+Type ".h" for help.
+
+zig> const stdout = std.io.getStdOut().writer();
+zig> try stdout.print("Hello, {s}!\n", .{"world"});
+Hello, world!
+zig> |
+
 FAQ. Issues.
 ============
 
