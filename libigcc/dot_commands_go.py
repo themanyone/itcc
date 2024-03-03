@@ -1,4 +1,4 @@
-# irust - a read-eval-print loop for C/C++, hare & rust programmers
+# igo - a read-eval-print loop for C/C++, hare & rust programmers
 #
 # Copyright (C) 2009 Andy Balaam
 #
@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
-from . import source_code_rs as source_code
+from . import source_code_go as source_code
 from . import copying
 import subprocess
 import os
@@ -25,19 +25,12 @@ from glob import glob
 
 # documentation search paths
 home = os.environ.get('HOME')
-docs = glob( home + '/.rustup/toolchains/nightly*/share/doc/rust/html/std/index.html' )
-docs.append('/usr/share/doc/rust/html/std/index.html')
-docs_url = 'https://doc.rust-lang.org/std/index.html'
-for doc in docs:
-    if os.path.isfile( doc ):
-        docs_url = "file://" + doc
-        break
-
+docs_url = 'https://go.dev/tour/welcome/1'
 class IGCCQuitException(Exception):
     pass
 
 def highlight( code ):
-    cmd = "highlight --syntax=rust -O ansi"
+    cmd = "highlight --syntax=go -O ansi"
     print_proc = subprocess.Popen( cmd, shell=True, 
     stdin = subprocess.PIPE, stdout = subprocess.PIPE )
     stdout, stderr = print_proc.communicate(code.encode())
@@ -88,6 +81,7 @@ dot_commands = {
     ".c" : ( "Show copying information", dot_c ),
     ".e" : ( "Show the last compile errors/warnings", dot_e ),
     ".h" : ( "Show this help message", None ),
+    ".h [lib]" : ("Show help about go [lib]", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
     ".L" : ( "List the whole program as given to the compiler", dot_L ),
@@ -108,6 +102,37 @@ def dot_h( runner ):
 def process( inp, runner ):
     if inp == ".h":
         return dot_h( runner )
+
+    if inp[:3] == ".h ":
+        find = ["find", "/usr/lib/golang/api/", "-name", f"*{inp[3:]}.zig"]
+        pick = ["pick"]
+        pick_process = subprocess.Popen(pick,
+        stdout = subprocess.PIPE, stdin = subprocess.PIPE )
+        find_process = subprocess.Popen(find,
+        stdout = pick_process.stdin, stderr = subprocess.PIPE )
+        stdout, stderr = pick_process.communicate()
+        if find_process.stderr is not None:
+            print(find_process.stderr)
+        f = stdout.decode("utf-8").strip()
+        view = f"highlight --syntax=c -O ansi {f}| more"
+        print(view)
+        view_process = subprocess.Popen(view, shell=True)
+        view_process.wait()
+        return False, False
+    elif inp == ".s":
+        find = ["find", "/usr/lib/golang/api/", "-name", "*.txt"]
+        find_process = subprocess.Popen(find,
+        stdout = subprocess.PIPE, stderr = subprocess.PIPE )
+        stdout, stderr = find_process.communicate()
+        libs = stdout.decode("utf-8").split("\n")
+        libs = [os.path.basename(line).strip(".zig") for line in libs]
+        libs = "\t".join(libs)
+        print(f"""
+Searchable Go Libraries
+
+{libs}
+""")
+        return False, False
     if inp == ".v":
         run_process = subprocess.Popen(["xdg-open", docs_url],
         stdout = subprocess.PIPE, stderr = subprocess.PIPE )

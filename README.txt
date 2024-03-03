@@ -19,6 +19,8 @@ ad use GCC). The experimntal MOB branch of tcc accepts random contributions from
 anyone, so check it over carefully! Join the active mailing list, contribute fixes, 
 and update often. git clone https://repo.or.cz/tinycc.git/
 
+Now with color listings. So colorama and highlight are required.
+
 The main reason we like tcc is instant gratification. Owing to its small download 
 size, and the smallness of the resulting executables, tcc's one-pass build ensures 
 virtually no compiler delays between entering code and seeing the results! Tcc 
@@ -254,6 +256,8 @@ Interactive hare sssion:
 Interactive Zig
 ===============
 
+$ izig
+izig 0.3
 Released under GNU GPL version 2 or later, with NO WARRANTY.
 Get zig from distro package or https://ziglang.org/
 Type ".h" for help.
@@ -262,6 +266,31 @@ zig> const stdout = std.io.getStdOut().writer();
 zig> try stdout.print("Hello, {s}!\n", .{"world"});
 Hello, world!
 zig> |
+
+Interactive Go
+==============
+
+$ igo
+igo 0.3
+Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get go from https://go.dev/                                                                   
+Type ".h" for help.                                                                           
+
+go> fmt.Println("Welcome to the playground!")
+Welcome to the playground!
+go> import "time"
+go> fmt.Println("The time is", time.Now())
+The time is 2024-03-02 10:28:25
+go> .L
+package main
+import "fmt"
+import "time"
+func main() {
+    fmt.Println("Welcome to the playground!")
+    fmt.Println("The time is", time.Now())
+}
+
+go> |
 
 FAQ. Issues.
 ============

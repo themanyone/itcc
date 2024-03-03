@@ -29,6 +29,7 @@ import sys
 import tempfile
 from contextlib import redirect_stdout
 from argparse import ArgumentParser
+from colorama import init, Fore, Back
 
 from . import dot_commands_crap as dot_commands
 from . import source_code_crap as source_code
@@ -150,10 +151,10 @@ def run_exe( exefilename, extra_args ):
     return run_process.communicate()
 
 def print_welcome():
-    print('''icrap $version
-Released under GNU GPL version 2 or later, with NO WARRANTY.
-Get crap from https://github.com/themanyone/crap
-Type ".h" for help.
+    print(f'''icrap $version
+{Back.BLACK}{Fore.GREEN}Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get crap from{Fore.BLUE} https://github.com/themanyone/crap
+{Fore.RESET}Type ".h" for help.{Back.RESET}
 '''.replace( "$version", version.VERSION ))
 
 class UserInput:
@@ -219,14 +220,14 @@ class Runner:
 
                 if run_cmp:
                     # print compiler command
-                    if self.options.v > 2:
+                    if self.options.v > 1:
                         print("$ " + ( " ".join( subs_compiler_command ) ))
                     self.compile_error = run_compile( subs_compiler_command,
                         self )
 
                     if self.compile_error is not None:
                         err = self.compile_error.decode().strip('\n')
-                        if self.options.v > 1:
+                        if self.options.v > 2:
                             print(err)
                         elif (err.find("empty block") < 0
                           and err.find("end of file") < 0) or self.options.e:

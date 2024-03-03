@@ -29,6 +29,7 @@ import sys
 import tempfile
 from contextlib import redirect_stdout
 from argparse import ArgumentParser
+from colorama import init, Fore, Back
 
 from . import dot_commands_hare as dot_commands
 from . import source_code_hare as source_code
@@ -137,10 +138,10 @@ def run_exe( exefilename, extra_args ):
     return run_process.communicate()
 
 def print_welcome():
-    print('''ihare $version
-Released under GNU GPL version 2 or later, with NO WARRANTY.
-Get hare from https://sr.ht/~sircmpwn/hare/sources
-Type ".h" for help.
+    print(f'''ihare $version
+{Back.BLACK}{Fore.GREEN}Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get hare from{Fore.BLUE} https://sr.ht/~sircmpwn/hare/sources
+{Fore.RESET}Type ".h" for help.{Back.RESET}
 '''.replace( "$version", version.VERSION ))
 
 class UserInput:

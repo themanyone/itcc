@@ -24,6 +24,13 @@ import subprocess
 class IGCCQuitException(Exception):
     pass
 
+def highlight( code ):
+    cmd = "highlight --syntax=c -O ansi"
+    print_proc = subprocess.Popen( cmd, shell=True, 
+    stdin = subprocess.PIPE, stdout = subprocess.PIPE )
+    stdout, stderr = print_proc.communicate(code.encode())
+    print(stdout.decode("utf-8"))
+
 def dot_c( runner ):
     print(copying.copying)
     return False, False
@@ -37,11 +44,11 @@ def dot_q( runner ):
     raise IGCCQuitException()
 
 def dot_l( runner ):
-    print("%s\n\n    %s" % ( runner.get_user_includes_string().strip(), runner.get_user_commands_string().strip() ))
+    highlight("%s\n\n    %s" % ( runner.get_user_includes_string().strip(), runner.get_user_commands_string().strip() ))
     return False, False
 
 def dot_L( runner ):
-    print(source_code.get_full_source( runner ))
+    highlight(source_code.get_full_source( runner ))
     return False, False
 
 def dot_r( runner ):
@@ -100,4 +107,3 @@ def process( inp, runner ):
             return dot_commands[cmd][1]( runner )
 
     return True, True
-

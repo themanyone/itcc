@@ -29,6 +29,7 @@ import sys
 import tempfile
 from contextlib import redirect_stdout
 from argparse import ArgumentParser
+from colorama import init, Fore, Back
 
 from . import dot_commands
 from . import source_code
@@ -131,9 +132,9 @@ def run_exe( exefilename, extra_args ):
     return run_process.communicate()
 
 def print_welcome():
-    print('''igcc $version
-Released under GNU GPL version 2 or later, with NO WARRANTY.
-Type ".h" for help.
+    print(f'''igcc $version
+{Back.BLACK}{Fore.GREEN}Released under GNU GPL version 2 or later, with NO WARRANTY.
+{Fore.RESET}Type ".h" for help.{Back.RESET}
 '''.replace( "$version", version.VERSION ))
 
 class UserInput:
@@ -200,7 +201,7 @@ class Runner:
                 if run_cmp:
                     # print compiler command
                     if self.options.v > 1:
-                        print(( " ".join( subs_compiler_command ) ))
+                        print("$ " + ( " ".join( subs_compiler_command ) ))
                     self.compile_error = run_compile( subs_compiler_command,
                         self )
 

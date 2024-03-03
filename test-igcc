@@ -60,14 +60,21 @@ def assert_strings_match( string, re_string ):
 	raise AssertionError( "\n" + string
 		+ "\ndoes not match regular expression\n" + re_string )
 
+def strip_codes(text):
+	# Define the regular expression pattern to match ANSI escape codes
+	ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
+	# Use the pattern to remove the color codes from the text
+	stripped_text = ansi_escape.sub('', text)
+	return stripped_text
+
 def run_program( commands, expected_output, print_welcome = False,
 		argv = None ):
 
 	outputfile = FakeWriteableFile()
 	stdinfile = FakeReadableFile( commands )
 	ret = libigcc.run.run( outputfile, stdinfile, print_welcome, argv )
-
-	assert_strings_equal( "".join( outputfile.lines ), expected_output )
+	txt = "".join( outputfile.lines )
+	assert_strings_equal( strip_codes(txt), expected_output )
 
 	return ret
 

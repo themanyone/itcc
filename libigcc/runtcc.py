@@ -29,6 +29,7 @@ import sys
 import tempfile
 from contextlib import redirect_stdout
 from argparse import ArgumentParser
+from colorama import init, Fore, Back
 
 from . import dot_commands_c as dot_commands
 from . import source_code_c as source_code
@@ -132,10 +133,10 @@ def run_exe( exefilename, extra_args ):
     return run_process.communicate()
 
 def print_welcome():
-    print('''itcc $version
-Released under GNU GPL version 2 or later, with NO WARRANTY.
-Get tcc from https://repo.or.cz/tinycc.git
-Type ".h" for help.
+    print(f'''itcc $version
+{Back.BLACK}{Fore.GREEN}Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get tcc from{Fore.BLUE} https://repo.or.cz/tinycc.git
+{Fore.RESET}Type ".h" for help.{Back.RESET}
 '''.replace( "$version", version.VERSION ))
 
 class UserInput:

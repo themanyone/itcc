@@ -1,4 +1,4 @@
-# irust - a read-eval-print loop for C/C++, rust & hare programmers
+# igo - a read-eval-print loop for C/C++, zig, rust & hare programmers
 #
 # igcc Copyright (C) 2009 Andy Balaam
 # with python3, rust, hare, and other support by Henry Kroll III
@@ -31,16 +31,16 @@ from contextlib import redirect_stdout
 from argparse import ArgumentParser
 from colorama import init, Fore, Back
 
-from . import dot_commands_rs as dot_commands
-from . import source_code_rs as source_code
+from . import dot_commands_go as dot_commands
+from . import source_code_go as source_code
 from . import version
 
 # --------------
 
 # One day these will be in a config file
 
-prompt = "rust> "
-compiler_command = ( 'rustc', "$lib_dirs", "$libs", "-o", "$outfile", "-" )
+prompt = "go> "
+compiler_command = ( "go", "build", "-o", "$lib_dirs", "$libs", "$srcfile" )
 
 include_dir_command = ( "-I$cmd", )
 lib_dir_command = ( "-L$cmd", )
@@ -48,7 +48,7 @@ lib_command = ( "-l$cmd", )
 
 #---------------
 
-incl_re = re.compile( r"\s*(use|extern|#\S+)\s" )
+incl_re = re.compile( r"\s*(import|extern|#\S+)\s" )
 
 #---------------
 
@@ -73,7 +73,7 @@ def create_read_line_function( inputfile, prompt ):
 
 def get_temporary_file_name():
     suff = ".exe" if platform.system() == 'Windows' else ""
-    outfile = tempfile.NamedTemporaryFile( prefix = 'irust', suffix = suff )
+    outfile = tempfile.NamedTemporaryFile( prefix = 'igo', suffix = suff )
     outfilename = outfile.name
     outfile.close()
     return outfilename
@@ -85,33 +85,36 @@ def append_multiple( single_cmd, cmdlist, ret ):
                 ret.append(
                     cmd_part.replace( "$cmd" , cmd ) )
 
-def get_compiler_command( options, extra_options, outfilename ):
+def get_compiler_command( options, extra_options, srcfilename, exefilename ):
     ret = []
 
     for part in compiler_command:
-        if part == "-o":
-            append_multiple( extra_options, ["-o"], ret)
-        if part == "$include_dirs":
-            append_multiple( include_dir_command, options.INCLUDE, ret )
+        if part == "$srcfile":
+            ret.append( part.replace( "$srcfile", srcfilename ) )
+        elif part == "-o":
+            append_multiple( extra_options, extra_options, ret)
         elif part == "$lib_dirs":
             append_multiple( lib_dir_command, options.LIBDIR,ret )
         elif part == "$libs":
             append_multiple( lib_command, options.LIB, ret )
         else:
-            ret.append( part.replace( "$outfile", outfilename ) )
-
+            ret.append( part.replace( "$outfile", exefilename ) )
     return ret
 
 
-def run_compile( subs_compiler_command, runner ):
-    #subprocess.run( 'source "$HOME/.cargo/env"', shell=True )
+def run_compile( subs_compiler_command, runner, srcfilename ):
     compile_process = subprocess.Popen( subs_compiler_command,
         stdin = subprocess.PIPE, stderr = subprocess.PIPE )
     source = source_code.get_full_source(runner)
     if runner.options.v > 2:
         print(source)
-    stdoutdata, stderrdata = compile_process.communicate(
-        source.encode('utf-8') )
+    with open(srcfilename, 'w') as file:
+        file.write(source)
+        file.close()
+    compile_process = subprocess.Popen( subs_compiler_command,
+        stdin = subprocess.PIPE, stdout = subprocess.PIPE, 
+        stderr = subprocess.PIPE )
+    stdoutdata, stderrdata = compile_process.communicate()
 
     if compile_process.returncode == 0:
         return None
@@ -132,9 +135,9 @@ def run_exe( exefilename, extra_args ):
     return run_process.communicate()
 
 def print_welcome():
-    print(f'''irust $version
+    print(f'''igo $version
 {Back.BLACK}{Fore.GREEN}Released under GNU GPL version 2 or later, with NO WARRANTY.
-Get rust from{Fore.BLUE} http://rust-lang.org
+Get go from{Fore.BLUE} https://go.dev/
 {Fore.RESET}Type ".h" for help.{Back.RESET}
 '''.replace( "$version", version.VERSION ))
 
@@ -164,10 +167,11 @@ class UserInput:
 
 class Runner:
 
-    def __init__( self, options, extra_options, inputfile, exefilename ):
+    def __init__( self, options, extra_options, inputfile, srcfilename, exefilename ):
         self.options = options
         self.extra_options = extra_options
         self.inputfile = inputfile
+        self.srcfilename = srcfilename
         self.exefilename = exefilename
         self.user_input = []
         self.input_num = 0
@@ -178,7 +182,7 @@ class Runner:
     def do_run( self, session_args ):
         read_line = create_read_line_function( self.inputfile, prompt )
         subs_compiler_command = get_compiler_command(
-            self.options, self.extra_options, self.exefilename )
+            self.options, self.extra_options, self.srcfilename, self.exefilename )
 
         inp = 1
         while inp is not None:
@@ -202,15 +206,19 @@ class Runner:
                 if run_cmp:
                     # print compiler command
                     if self.options.v > 1:
-                        print(( " ".join( subs_compiler_command ) ))
+                        print("$ " + ( " ".join( subs_compiler_command ) ))
+                    os.chdir("/tmp")
                     self.compile_error = run_compile( subs_compiler_command,
-                        self )
+                    self, self.srcfilename )
 
                     if self.compile_error is not None:
                         err = self.compile_error.decode().strip('\n')
-                        if self.options.v > 1:
+                        if self.options.v > 2:
                             print(err)
-                        elif (err.find("unclosed") < 0
+                        # ignore some compiler errors
+                        elif (err.find("not used") < 0
+                          and err.find("found 'eof'") < 0
+                          and err.find("found '}'") < 0
                           and err.find("end of file") < 0) or self.options.e:
                             print("[Compile error - type .e to see it.]")
                     else:
@@ -275,7 +283,7 @@ class Runner:
 def parse_args( argv ):
     parser = ArgumentParser()
     parser.description =\
-        "Run an interactive Rust live coding session."
+        "Run an interactive Go live coding session."
     parser.add_argument( "-v", action="count", default=0,
         help = "Increase verbosity." )
     parser.add_argument( "-e", action="store_true",
@@ -310,19 +318,22 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
 
     # Use a with statement block to redirect sys.stdout
     with redirect_stdout(outputfile):
-        try:
-            options, extra_args, session_args = parse_args(argv)
+        #try:
+        options, extra_args, session_args = parse_args(argv)
 
-            exefilename = get_temporary_file_name()
-            ret = "normal"
-            if print_welc:
-                print_welcome()
-            Runner(options, extra_args, inputfile, exefilename).do_run(session_args)
-        except Exception as e:
-            print(e)
-            ret = "quit"
+        exefilename = get_temporary_file_name()
+        srcfilename = exefilename + ".go"
+        ret = "normal"
+        if print_welc:
+            print_welcome()
+        Runner(options, extra_args, inputfile, srcfilename, exefilename).do_run(session_args)
+        #except Exception as e:
+        #    print(e)
+        #    ret = "quit"
 
-    if os.path.isfile(exefilename):
+    if os.path.isfile(exefilename): # never happens
         os.remove(exefilename)
+    if os.path.isfile(srcfilename):
+        os.remove(srcfilename)
 
     return ret

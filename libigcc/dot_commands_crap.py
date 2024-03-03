@@ -26,6 +26,13 @@ srcfile = source_code.srcfile
 class IGCCQuitException(Exception):
     pass
 
+def highlight( code ):
+    cmd = "highlight -f -S c -O xterm256 -"
+    print_proc = subprocess.Popen( cmd, shell=True, 
+    stdin = subprocess.PIPE, stdout = subprocess.PIPE )
+    stdout, stderr = print_proc.communicate(code.encode())
+    print(stdout.decode("utf-8"))
+
 def dot_c( runner ):
     print(copying.copying)
     return False, False
@@ -35,18 +42,24 @@ def dot_e( runner ):
         print(runner.compile_error.decode().strip('\n'))
     return False, False
 
+def dot_g( runner ):
+    cmd = "man -k library | highlight --force=rust -O xterm256"
+    run_process = subprocess.Popen( cmd, shell=True )
+    run_process.wait()
+    return False, False
+
 def dot_q( runner ):
     raise IGCCQuitException()
 
 def dot_l( runner ):
-    print("%s\n\n    %s" % ( runner.get_user_includes_string().strip(), runner.get_user_commands_string().strip() ))
+    highlight("%s\n\n    %s" % ( runner.get_user_includes_string().strip(), runner.get_user_commands_string().strip() ))
     return False, False
 
 def dot_L( runner ):
     # print(source_code.get_full_source( runner ))
     if os.path.isfile(srcfile):
         with open(srcfile, 'r') as file:
-            print(file.read())
+            highlight(file.read())
     return False, False
 
 def dot_r( runner ):
@@ -73,9 +86,9 @@ def dot_w( runner ):
 dot_commands = {
     ".c" : ( "Show copying information", dot_c ),
     ".e" : ( "Show the last compile errors/warnings", dot_e ),
+    ".g" : ( "Show list of lib names to get help about", dot_g ),
     ".h" : ( "Show this help message", None ),
-    ".h [lib]" : ( "Show help about C [cmd or lib]", None ),
-    ".s" : ( "Show list of lib names to use", None ),
+    ".h [lib]" : ( "Show help about [cmd or lib]", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
     ".L" : ( "List the generated C code fed to the compiler", dot_L ),
@@ -96,13 +109,13 @@ def process( inp, runner ):
     if inp == ".h":
         return dot_h( runner )
     elif inp[:3] == ".h ":
-        run_process = subprocess.Popen(["man", "-Hxdg-open", "3.", inp[3:]],
-        stdout = subprocess.PIPE, stderr = subprocess.PIPE )
+        run_process = subprocess.Popen(["man", "-S", "3:7:0p", f"{inp[3:]}"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE )
         stdout, stderr = run_process.communicate()
+        highlight(stdout.decode("utf-8"))
         return False, False
     for cmd in sorted( dot_commands.keys() ):
         if inp == cmd:
             return dot_commands[cmd][1]( runner )
 
     return True, True
-
