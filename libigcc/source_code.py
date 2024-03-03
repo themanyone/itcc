@@ -21,9 +21,8 @@
 file_boilerplate = """#include <cstdio>
 #include <iostream>
 #include <string>
-$user_includes
 using namespace std;
-int main(int argc, char **argv, char **env){
+$user_includesint main(int argc, char **argv, char **env){
 $user_commands    return 0;
 }"""
 

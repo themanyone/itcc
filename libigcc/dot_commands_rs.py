@@ -37,11 +37,11 @@ class IGCCQuitException(Exception):
     pass
 
 def highlight( code ):
-    cmd = "highlight --syntax=rust -O ansi"
+    cmd = "highlight -f -S rust -O xterm256 -"
     print_proc = subprocess.Popen( cmd, shell=True, 
     stdin = subprocess.PIPE, stdout = subprocess.PIPE )
     stdout, stderr = print_proc.communicate(code.encode())
-    print(stdout.decode("utf-8"))
+    print(stdout.decode("utf-8").strip())
 
 def dot_c( runner ):
     print(copying.copying)
@@ -50,6 +50,26 @@ def dot_c( runner ):
 def dot_e( runner ):
     if runner is not None and hasattr(runner.compile_error, "decode"):
         print(runner.compile_error.decode().strip('\n'))
+    return False, False
+
+def dot_f( runner ):
+    print("Function entry mode. Enter a blank line to finish. CTRL-C to cancel.")
+    input_list = []
+    try:
+        while True:
+            line = input().replace('\t', '    ')
+            if not line: break
+            input_list.append(line)
+        runner.inp = "\n".join(input_list)
+    except KeyboardInterrupt:
+        return False, False
+    # return yes we want to input the function, but no to compiling it
+    return True, False
+
+def dot_g( runner ):
+    cmd = "man -k library | highlight --force=rust -O xterm256"
+    run_process = subprocess.Popen( cmd, shell=True )
+    run_process.wait()
     return False, False
 
 def dot_q( runner ):
@@ -80,6 +100,12 @@ def dot_u( runner ):
         print("[Nothing to undo.]")
     return False, False
 
+def dot_v( runner ):
+    run_process = subprocess.Popen(["xdg-open", docs_url],
+    stdout = subprocess.PIPE, stderr = subprocess.PIPE )
+    stdout, stderr = run_process.communicate()
+    return False, False
+
 def dot_w( runner ):
     print(copying.warranty)
     return False, False
@@ -87,13 +113,16 @@ def dot_w( runner ):
 dot_commands = {
     ".c" : ( "Show copying information", dot_c ),
     ".e" : ( "Show the last compile errors/warnings", dot_e ),
+    ".f" : ( "Try function entry mode", dot_f ),
+    ".g" : ( "Get list of c libraries to show man pages about", dot_g ),
     ".h" : ( "Show this help message", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
-    ".L" : ( "List the whole program as given to the compiler", dot_L ),
+    ".L" : ( "List the whole code as sent to the compiler", dot_L ),
+    ".m [lib]" : ( "Show man page about [cmd or lib]", None ),
     ".r" : ( "Redo undone command", dot_r ),
     ".u" : ( "Undo previous command", dot_u ),
-    ".v" : ( "View Language Documentation", None ),
+    ".v" : ( "View Online Documentation", dot_v ),
     ".w" : ( "Show warranty information", dot_w ),
     }
 
@@ -108,10 +137,11 @@ def dot_h( runner ):
 def process( inp, runner ):
     if inp == ".h":
         return dot_h( runner )
-    if inp == ".v":
-        run_process = subprocess.Popen(["xdg-open", docs_url],
-        stdout = subprocess.PIPE, stderr = subprocess.PIPE )
+    elif inp[:3] == ".m ":
+        run_process = subprocess.Popen(["man", "-S", "3:7:0p", f"{inp[3:]}"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE )
         stdout, stderr = run_process.communicate()
+        highlight(stdout.decode("utf-8"))
         return False, False
     for cmd in sorted( dot_commands.keys() ):
         if inp == cmd:

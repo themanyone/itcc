@@ -1,7 +1,7 @@
 # ihare - a read-eval-print loop for C/C++, rust & hare programmers
 #
-# Copyright (C) 2009 Andy Balaam
-# with python3, rust, hare, and tcc support by Henry Kroll III
+# igcc Copyright (C) 2009 Andy Balaam
+# with python3, rust, hare, and other support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -189,7 +189,7 @@ class Runner:
 
         inp = 1
         while inp is not None:
-            inp = read_line()
+            inp = self.inp = read_line()
             if inp is not None:
 
                 col_inp, run_cmp = (
@@ -197,13 +197,12 @@ class Runner:
                 if col_inp:
                     if self.input_num < len( self.user_input ):
                         self.user_input = self.user_input[ : self.input_num ]
-                        self.user_input.append( UserInput( "    " + inp, typ ) )
-                    if incl_re.match( inp ):
+                    if incl_re.match( inp ) or not run_cmp:
                         typ = UserInput.INCLUDE
-                        self.user_input.append( UserInput( inp, typ ) )
+                        self.user_input.append( UserInput( self.inp, typ ) )
                     else:
                         typ = UserInput.COMMAND
-                        self.user_input.append( UserInput( "    " + inp, typ ) )
+                        self.user_input.append( UserInput( "    " + self.inp, typ ) )
                     self.input_num += 1
 
                 if run_cmp:
@@ -331,4 +330,5 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
         os.remove(exefilename)
     if os.path.isfile(srcfilename):
         os.remove(srcfilename)
+
     return ret

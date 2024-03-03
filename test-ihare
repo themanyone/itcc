@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# igcc - a read-eval-print loop for C/C++ programmers
+# ihare - a read-eval-print loop for C/C++ programmers
 #
 # Copyright (C) 2009 Andy Balaam
 # with python3 and tcc support by Henry Kroll III
@@ -21,10 +21,10 @@
 # MA 02110-1301, USA.
 
 import re
-
-import libigcc.run
-from libigcc.run import UserInput
-import libigcc.source_code
+import os
+import libigcc.runhare
+from libigcc.runhare import UserInput
+import libigcc.source_code_hare
 import libigcc.version
 
 class FakeWriteableFile:
@@ -72,7 +72,7 @@ def run_program( commands, expected_output, print_welcome = False,
 
 	outputfile = FakeWriteableFile()
 	stdinfile = FakeReadableFile( commands )
-	ret = libigcc.run.run( outputfile, stdinfile, print_welcome, argv )
+	ret = libigcc.runhare.run( outputfile, stdinfile, print_welcome, argv )
 	txt = "".join( outputfile.lines )
 	assert_strings_equal( strip_codes(txt), expected_output )
 
@@ -81,53 +81,59 @@ def run_program( commands, expected_output, print_welcome = False,
 def run_program_regex_output( commands, expected_output_re ):
 	outputfile = FakeWriteableFile()
 	stdinfile = FakeReadableFile( commands )
-	libigcc.run.run( outputfile, stdinfile, False )
+	libigcc.runhare.run( outputfile, stdinfile, False )
 
 	assert_strings_match( "".join( outputfile.lines ), expected_output_re )
 
 def test_print_argv():
-    commands = [ "puts(argv[1]);" ]
-    expected_output = 'g++> puts(argv[1]);\nfoo\ng++> \n'
-    run_program( commands, expected_output, False, ['--', 'foo'] )
+	commands = [ "use os;", "use fmt;", "fmt::println(os::args[1])!;" ]
+	expected_output = '''hare> use os;
+hare> use fmt;
+hare> fmt::println(os::args[1])!;
+foo
+hare> 
+'''
+	run_program( commands, expected_output, False, ['--', 'foo'] )
 
 def test_declare_var():
-	commands = [ "int a;" ]
-	expected_output = 'g++> int a;\ng++> \n'
+	commands = [ "let a = 0;" ]
+	expected_output = 'hare> let a = 0;\nhare> \n'
 	run_program( commands, expected_output )
 
 def test_declare_var_assign():
-	commands = [ "int a;", "a = 10;" ]
-	expected_output = 'g++> int a;\ng++> a = 10;\ng++> \n'
+	commands = [ "let a = 0;", "a = 10;" ]
+	expected_output = 'hare> let a = 0;\nhare> a = 10;\nhare> \n'
 	run_program( commands, expected_output )
 
 def test_declare_and_assign_var_then_print():
-	commands = [ "int a = 10;",
-		'printf( "%d\\n", a );' ]
+	commands = [ "use fmt;", "let a = 10;",
+		r'fmt::printfln( "{}", a )!;' ]
 
 	expected_output = (
-'''g++> int a = 10;
-g++> printf( "%d\\n", a );
+'''hare> use fmt;
+hare> let a = 10;
+hare> fmt::printfln( "{}", a )!;
 10
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
 
 
 def test_print_twice():
-	commands = [ "int a = 10;",
-		'printf( "%d\\n", a );',
-		"++a;",
-		'printf( "%d\\n", a );' ]
+	commands = [ "let a = 10;",
+		r'fmt::printfln( "{}", a )!;',
+		"a += 1;",
+		r'fmt::printfln( "{}", a )!;' ]
 
 	expected_output = (
-'''g++> int a = 10;
-g++> printf( "%d\\n", a );
+'''hare> let a = 10;
+hare> fmt::printfln( "{}", a )!;
 10
-g++> ++a;
-g++> printf( "%d\\n", a );
+hare> a += 1;
+hare> fmt::printfln( "{}", a )!;
 11
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -136,9 +142,9 @@ def test_compile_error():
 	commands = [ "int a" ] # no semicolon
 
 	expected_output = (
-'''g++> int a
+'''hare> int a
 [Compile error - type .e to see it.]
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -150,68 +156,91 @@ def test_compile_error_display():
 
 	# Just look for a string "xpected" in the compiler output.
 	expected_output_re = (
-u'''.*expected.*''' )
+r'''.*expected.*''' )
 
 	run_program_regex_output( commands, expected_output_re )
 
 
 def test_include():
 	commands = [
-		'#include <vector>',
-		'std::vector<int> vec;',
-		r'printf( "%d\n", vec.size() );' ]
+		'use glob;',
+		'let g = glob::glob("*.txt", 0);',
+		'for (true) match (glob::next(&g)) {',
+		'   case void => break;',
+		'   case let f: str =>',
+		'      fmt::println(f)!;',
+		'};',
+		'glob::finish(&g);',
+		 ]
 
 	expected_output = (
-r'''g++> #include <vector>
-g++> std::vector<int> vec;
-g++> printf( "%d\n", vec.size() );
-0
-g++> 
+r'''hare> use glob;
+hare> let g = glob::glob("*.txt", 0);
+hare> for (true) match (glob::next(&g)) {
+hare>    case void => break;
+hare>    case let f: str =>
+hare>       fmt::println(f)!;
+hare> };
+COPYING.txt
+README.txt
+hare> glob::finish(&g);
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
 
 def test_multiple_repeated_includes():
 	commands = [
-		'  #  include   <vector> ',
-		'std::vector<int> vec;',
-		'#include <iostream>',
-		' #   include   <vector>',
-		'#include <iostream>',
-		'using namespace std;',
-		'cout << vec.size() << std::endl;' ]
+'use io;',
+'use os;',
+'use strings;',
+'const source = os::open("README.txt")!;',
+'const source = io::drain(source)!;',
+'const source = strings::fromutf8(source)!;',
+'const source = strings::split(source, "\n");',
+'fmt::println("The first three lines of README.txt are:")!;',
+'fmt::println(source[0])!;',
+'fmt::println(source[1])!;',
+'fmt::println(source[2])!;',
+]
 
 	expected_output = (
-r'''g++>   #  include   <vector> 
-g++> std::vector<int> vec;
-g++> #include <iostream>
-g++>  #   include   <vector>
-g++> #include <iostream>
-g++> using namespace std;
-g++> cout << vec.size() << std::endl;
-0
-g++> 
+r'''hare> use io;
+hare> use os;
+hare> use strings;
+hare> const source = os::open("README.txt")!;
+hare> const source = io::drain(source)!;
+hare> const source = strings::fromutf8(source)!;
+hare> const source = strings::split(source, "
+");
+hare> fmt::println("The first three lines of README.txt are:")!;
+The first three lines of README.txt are:
+hare> fmt::println(source[0])!;
+Interactive TCC
+hare> fmt::println(source[1])!;
+===============
+hare> fmt::println(source[2])!;
+
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
 
 def test_list_program():
 	commands = [
-		'int a;',
+		'let a = 0;',
 		'a += 2;',
-		'#include <vector>',
 		'.l' ]
 
 	expected_output = (
-r'''g++> int a;
-g++> a += 2;
-g++> #include <vector>
-g++> .l
-#include <vector>
+r'''hare> let a = 0;
+hare> a += 2;
+hare> .l
 
-    int a;
+
+    let a = 0;
     a += 2;
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -229,30 +258,25 @@ class FakeRunner:
 
 def test_list_full_program():
 	commands = [
-		'int a;',
+		'let a = 0;',
 		'a += 2;',
-		'#include <vector>',
 		'.L' ]
 
-	fakerunner = FakeRunner( 'int a;\na += 2;\n',
-		"#include <vector>\n" )
+	fakerunner = FakeRunner( 'let a = 0;\n	a += 2;\n',
+		"use iconv;\n" )
 
 	expected_output = (
-'''g++> int a;
-g++> a += 2;
-g++> #include <vector>
-g++> .L
-#include <cstdio>
-#include <iostream>
-#include <string>
-using namespace std;
-#include <vector>
-int main(int argc, char **argv, char **env){
-    int a;
+'''hare> let a = 0;
+hare> a += 2;
+hare> .L
+use fmt;
+
+
+export fn main() void = {
+    let a = 0;
     a += 2;
-    return 0;
-}
-g++> 
+};
+hare> 
 ''')
 
 	run_program( commands, expected_output )
@@ -269,7 +293,7 @@ def test_quit():
 	commands = [
 		'.q' ]
 
-	expected_output = "g++> .q\n\n"
+	expected_output = "hare> .q\n\n"
 
 	ret = run_program( commands, expected_output )
 
@@ -278,66 +302,78 @@ def test_quit():
 def test_welcome_message():
 	commands = []
 	expected_output = (
-'''igcc $version
+'''ihare $version
 Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get hare from https://sr.ht/~sircmpwn/hare/sources
 Type ".h" for help.
 
-g++> 
+hare> 
 ''' ).replace( "$version", libigcc.version.VERSION )
 
 	run_program( commands, expected_output, True )
 
 def test_include_dir_on_cmd_line():
-	commands = [ '#include "hello.h"',
-		'hello();' ]
+	commands = [ 'use test;',
+		'test::print(test::hello);' ]
 
 	expected_output = (
-'''g++> #include "hello.h"
-g++> hello();
-Hello, 
-g++> 
+'''hare> use test;
+hare> test::print(test::hello);
+Hello world!
+hare> 
 ''' )
 
-	argv = [ "-I", "test/cpp" ]
+	argv = [ "-L", "." ]
 
 	run_program( commands, expected_output, argv = argv )
 
 
 def test_2_include_dirs_on_cmd_line():
-	commands = [ '#include "hello.h"',
-		'hello();',
-		'#include "world.h"',
-		'world();', ]
+	commands = [ 'use test;',
+	    'use types::c;',
+	    '@symbol("hello") fn c_hello() void;',
+	    '@symbol("world") fn c_world() void;',
+		'test::print(test::hello);',
+		'c_hello();',
+		'c_world();', ]
 
 	expected_output = (
-'''g++> #include "hello.h"
-g++> hello();
+'''hare> use test;
+hare> use types::c;
+hare> @symbol("hello") fn c_hello() void;
+hare> @symbol("world") fn c_world() void;
+hare> test::print(test::hello);
+Hello world!
+hare> c_hello();
 Hello, 
-g++> #include "world.h"
-g++> world();
+hare> c_world();
 world!
-g++> 
+hare> 
 ''' )
 
-	argv = [ "-I", "test/cpp", "-I", "test/cpp2" ]
-
+	argv = [ "-L.", "-lhello", "-lworld" ]
+	if not os.path.isfile("libworld.so"):
+	    os.system("tcc -Itest/cpp -r test/cpp/hello.h -o libhello.so")
+	    os.system("tcc -Itest/cpp -r test/cpp2/world.h -o libworld.so")
 	run_program( commands, expected_output, argv = argv )
+	if os.path.isfile('libhello.so'):
+	    os.remove('libhello.so')
+	if os.path.isfile('libworld.so'):
+	    os.remove('libworld.so')
 
 
 def test_lib():
-	commands = [ '#include "math.h"',
-		'int a = max( 4, 6 );',
-		r'printf( "%d\n", a );', ]
+	commands = ['use math;',
+		r'fmt::printfln("2^4={}", math::powf64(2f64,4f64))!;', ]
 
 	expected_output = (
-r'''g++> #include "math.h"
-g++> int a = max( 4, 6 );
-g++> printf( "%d\n", a );
-6
-g++> 
+r'''hare> use math;
+hare> fmt::printfln("2^4={}", math::powf64(2f64,4f64))!;
+2^4=16
+hare> 
 ''' )
 
-	argv = [ "-lm" ]
+	argv = [ ]
 
 	run_program( commands, expected_output, argv = argv )
 
@@ -346,9 +382,9 @@ def test_print_license():
 	commands = [ '.c' ]
 
 	expected_output_re = (
-r'''g\+\+\> \.c
+r'''hare> \.c
 .*GNU GENERAL PUBLIC LICENSE.*
-g\+\+\> 
+hare> 
 ''' )
 
 	run_program_regex_output( commands, expected_output_re )
@@ -359,16 +395,16 @@ def test_print_warranty():
 	commands = [ '.w' ]
 
 	expected_output_re = (
-r'''g\+\+\> \.w
+r'''hare> \.w
 .*Disclaimer of Warranty.*
-g\+\+\> 
+hare> 
 ''' )
 
 	run_program_regex_output( commands, expected_output_re )
 
 
 def test_runner_get_user_input():
-	runner = libigcc.run.Runner( None, None, None, None )
+	runner = libigcc.runhare.Runner( None, None, None, None, None )
 	runner.user_input = [
 		UserInput("0", UserInput.COMMAND),
 		UserInput("1", UserInput.COMMAND),
@@ -390,7 +426,7 @@ def test_runner_get_user_input():
 
 
 def test_runner_get_user_commands():
-	runner = libigcc.run.Runner( None, None, None, None )
+	runner = libigcc.runhare.Runner( None, None, None, None, None )
 	runner.user_input = [
 		UserInput("0", UserInput.COMMAND),
 		UserInput("1", UserInput.COMMAND),
@@ -408,23 +444,23 @@ def test_runner_get_user_commands():
 
 def test_undo_1():
 	commands = [
-		'int a;',
+		'let a = 0;',
 		'a = 5;',
 		'foobar',
 		'.u',
-		'cout << a << endl;',
+		r'fmt::printfln("{}",a)!;',
 		]
 
 	expected_output = (
-r'''g++> int a;
-g++> a = 5;
-g++> foobar
+r'''hare> let a = 0;
+hare> a = 5;
+hare> foobar
 [Compile error - type .e to see it.]
-g++> .u
+hare> .u
 [Undone '    foobar'.]
-g++> cout << a << endl;
+hare> fmt::printfln("{}",a)!;
 5
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -432,27 +468,27 @@ g++>
 
 def test_undo_2():
 	commands = [
-		'int a = 5;',
-		'++a;',
-		'++a;',
-		'++a;',
+		'let a = 5;',
+		'a += 1;',
+		'a += 1;',
+		'a += 1;',
 		'.u',
 		'.u',
-		'cout << a << endl;',
+		r'fmt::printfln("{}",a)!;',
 		]
 
 	expected_output = (
-r'''g++> int a = 5;
-g++> ++a;
-g++> ++a;
-g++> ++a;
-g++> .u
-[Undone '    ++a;'.]
-g++> .u
-[Undone '    ++a;'.]
-g++> cout << a << endl;
+'''hare> let a = 5;
+hare> a += 1;
+hare> a += 1;
+hare> a += 1;
+hare> .u
+[Undone '    a += 1;'.]
+hare> .u
+[Undone '    a += 1;'.]
+hare> fmt::printfln("{}",a)!;
 6
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -460,32 +496,32 @@ g++>
 
 def test_undo_before_beginning():
 	commands = [
-		'int a = 5;',
+		'let a = 5;',
 		'.u',
 		'.u',
 		'.u',
-		'cout << a << endl;',
+		r'fmt::printfln("{}",a)!;',
 		'.u',
-		'int b = 7;',
-		'cout << b << endl;',
+		'let b = 7;',
+		r'fmt::printfln("{}",b)!;',
 		]
 
 	expected_output = (
-r'''g++> int a = 5;
-g++> .u
-[Undone '    int a = 5;'.]
-g++> .u
+r'''hare> let a = 5;
+hare> .u
+[Undone '    let a = 5;'.]
+hare> .u
 [Nothing to undo.]
-g++> .u
+hare> .u
 [Nothing to undo.]
-g++> cout << a << endl;
+hare> fmt::printfln("{}",a)!;
 [Compile error - type .e to see it.]
-g++> .u
-[Undone '    cout << a << endl;'.]
-g++> int b = 7;
-g++> cout << b << endl;
+hare> .u
+[Undone '    fmt::printfln("{}",a)!;'.]
+hare> let b = 7;
+hare> fmt::printfln("{}",b)!;
 7
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -493,25 +529,25 @@ g++>
 
 def test_undo_includes_and_commands():
 	commands = [
-		'int a = 5;',
-		'#include <vector>',
-		'++a;',
+		'let a = 5;',
+		'use math;',
+		'a += 1;',
 		'.u',
 		'.u',
 		'.u',
 		]
 
 	expected_output = (
-r'''g++> int a = 5;
-g++> #include <vector>
-g++> ++a;
-g++> .u
-[Undone '    ++a;'.]
-g++> .u
-[Undone '#include <vector>'.]
-g++> .u
-[Undone '    int a = 5;'.]
-g++> 
+r'''hare> let a = 5;
+hare> use math;
+hare> a += 1;
+hare> .u
+[Undone '    a += 1;'.]
+hare> .u
+[Undone 'use math;'.]
+hare> .u
+[Undone '    let a = 5;'.]
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -519,23 +555,23 @@ g++>
 
 def test_redo_1():
 	commands = [
-		'int a = 1;',
-		'++a;',
+		'let a = 1;',
+		'a += 1;',
 		'.u',
 		'.r',
-		'cout << a << endl;',
+		r'fmt::printfln("{}",a)!;',
 		]
 
 	expected_output = (
-r'''g++> int a = 1;
-g++> ++a;
-g++> .u
-[Undone '    ++a;'.]
-g++> .r
-[Redone '    ++a;'.]
-g++> cout << a << endl;
+r'''hare> let a = 1;
+hare> a += 1;
+hare> .u
+[Undone '    a += 1;'.]
+hare> .r
+[Redone '    a += 1;'.]
+hare> fmt::printfln("{}",a)!;
 2
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -545,29 +581,29 @@ g++>
 
 def test_redo_2():
 	commands = [
-		'int a = 1;',
-		'++a;',
+		'let a = 1;',
+		'a += 1;',
 		'.u',
 		'.u',
 		'.r',
 		'.r',
-		'cout << a << endl;',
+		r'fmt::printfln("{}",a)!;',
 		]
 
 	expected_output = (
-r'''g++> int a = 1;
-g++> ++a;
-g++> .u
-[Undone '    ++a;'.]
-g++> .u
-[Undone '    int a = 1;'.]
-g++> .r
-[Redone '    int a = 1;'.]
-g++> .r
-[Redone '    ++a;'.]
-g++> cout << a << endl;
+r'''hare> let a = 1;
+hare> a += 1;
+hare> .u
+[Undone '    a += 1;'.]
+hare> .u
+[Undone '    let a = 1;'.]
+hare> .r
+[Redone '    let a = 1;'.]
+hare> .r
+[Redone '    a += 1;'.]
+hare> fmt::printfln("{}",a)!;
 2
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -577,32 +613,32 @@ g++>
 
 def test_redo_before_beginning():
 	commands = [
-		'int a = 1;',
-		'++a;',
+		'let a = 1;',
+		'a += 1;',
 		'.u',
 		'.u',
 		'.u',
 		'.r',
 		'.r',
-		'cout << a << endl;',
+		r'fmt::printfln("{}",a)!;',
 		]
 
 	expected_output = (
-r'''g++> int a = 1;
-g++> ++a;
-g++> .u
-[Undone '    ++a;'.]
-g++> .u
-[Undone '    int a = 1;'.]
-g++> .u
+r'''hare> let a = 1;
+hare> a += 1;
+hare> .u
+[Undone '    a += 1;'.]
+hare> .u
+[Undone '    let a = 1;'.]
+hare> .u
 [Nothing to undo.]
-g++> .r
-[Redone '    int a = 1;'.]
-g++> .r
-[Redone '    ++a;'.]
-g++> cout << a << endl;
+hare> .r
+[Redone '    let a = 1;'.]
+hare> .r
+[Redone '    a += 1;'.]
+hare> fmt::printfln("{}",a)!;
 2
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -611,26 +647,26 @@ g++>
 
 def test_redo_after_end():
 	commands = [
-		'int a = 1;',
-		'++a;',
+		'let a = 1;',
+		'a += 1;',
 		'.u',
 		'.r',
 		'.r',
-		'cout << a << endl;',
+		r'fmt::printfln("{}",a)!;',
 		]
 
 	expected_output = (
-r'''g++> int a = 1;
-g++> ++a;
-g++> .u
-[Undone '    ++a;'.]
-g++> .r
-[Redone '    ++a;'.]
-g++> .r
+r'''hare> let a = 1;
+hare> a += 1;
+hare> .u
+[Undone '    a += 1;'.]
+hare> .r
+[Redone '    a += 1;'.]
+hare> .r
 [Nothing to redo.]
-g++> cout << a << endl;
+hare> fmt::printfln("{}",a)!;
 2
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -638,9 +674,9 @@ g++>
 
 def test_redo_includes_and_commands():
 	commands = [
-		'int a = 5;',
-		'#include <vector>',
-		'++a;',
+		'let a = 5;',
+		'use math;',
+		'a += 1;',
 		'.u',
 		'.u',
 		'.u',
@@ -650,22 +686,22 @@ def test_redo_includes_and_commands():
 		]
 
 	expected_output = (
-r'''g++> int a = 5;
-g++> #include <vector>
-g++> ++a;
-g++> .u
-[Undone '    ++a;'.]
-g++> .u
-[Undone '#include <vector>'.]
-g++> .u
-[Undone '    int a = 5;'.]
-g++> .r
-[Redone '    int a = 5;'.]
-g++> .r
-[Redone '#include <vector>'.]
-g++> .r
-[Redone '    ++a;'.]
-g++> 
+r'''hare> let a = 5;
+hare> use math;
+hare> a += 1;
+hare> .u
+[Undone '    a += 1;'.]
+hare> .u
+[Undone 'use math;'.]
+hare> .u
+[Undone '    let a = 5;'.]
+hare> .r
+[Redone '    let a = 5;'.]
+hare> .r
+[Redone 'use math;'.]
+hare> .r
+[Redone '    a += 1;'.]
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -673,27 +709,27 @@ g++>
 
 def test_undo_then_new_commands():
 	commands = [
-		'int a = 5;',
-		'++a;',
+		'let a = 5;',
+		'a += 1;',
 		'.u',
-		'--a;',
-		'--a;',
+		'a -= 1;',
+		'a -= 1;',
 		'.u',
-		'cout << a << endl;',
+		r'fmt::printfln("{}",a)!;',
 		]
 
 	expected_output = (
-r'''g++> int a = 5;
-g++> ++a;
-g++> .u
-[Undone '    ++a;'.]
-g++> --a;
-g++> --a;
-g++> .u
-[Undone '    --a;'.]
-g++> cout << a << endl;
+r'''hare> let a = 5;
+hare> a += 1;
+hare> .u
+[Undone '    a += 1;'.]
+hare> a -= 1;
+hare> a -= 1;
+hare> .u
+[Undone '    a -= 1;'.]
+hare> fmt::printfln("{}",a)!;
 4
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -701,28 +737,28 @@ g++>
 
 def test_undo_redo_with_output():
 	commands = [
-		'int a = 56;',
-		'cout << a << endl;',
+		'let a = 56;',
+		r'fmt::printfln("{}",a)!;',
 		'.u',
 		'.r',
 		'.u',
-		'cout << 12 << endl;',
+		r'fmt::printfln("{}",12)!;',
 		]
 
 	expected_output = (
-r'''g++> int a = 56;
-g++> cout << a << endl;
+r'''hare> let a = 56;
+hare> fmt::printfln("{}",a)!;
 56
-g++> .u
-[Undone '    cout << a << endl;'.]
-g++> .r
-[Redone '    cout << a << endl;'.]
+hare> .u
+[Undone '    fmt::printfln("{}",a)!;'.]
+hare> .r
+[Redone '    fmt::printfln("{}",a)!;'.]
 56
-g++> .u
-[Undone '    cout << a << endl;'.]
-g++> cout << 12 << endl;
+hare> .u
+[Undone '    fmt::printfln("{}",a)!;'.]
+hare> fmt::printfln("{}",12)!;
 12
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -730,38 +766,38 @@ g++>
 
 
 def test_print_stderr_twice():
-	commands = [ "int a = 10;",
-		'cerr << a << endl;',
-		"++a;",
-		'cerr << a << endl;' ]
+	commands = [ "let a = 10;",
+		r'fmt::errorfln("{}", a)!;',
+		"a += 1;",
+		r'fmt::errorfln("{}", a)!;' ]
 
 	expected_output = (
-'''g++> int a = 10;
-g++> cerr << a << endl;
+'''hare> let a = 10;
+hare> fmt::errorfln("{}", a)!;
 10
-g++> ++a;
-g++> cerr << a << endl;
+hare> a += 1;
+hare> fmt::errorfln("{}", a)!;
 11
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
 
 
 def test_print_stderr_stdout():
-	commands = [ "int a = 10;",
-		'cerr << a << endl;',
-		"++a;",
-		'cout << a << endl;' ]
+	commands = [ "let a = 10;",
+		r'fmt::errorfln("{}", a)!;',
+		"a += 1;",
+		r'fmt::printfln("{}",a)!;' ]
 
 	expected_output = (
-'''g++> int a = 10;
-g++> cerr << a << endl;
+'''hare> let a = 10;
+hare> fmt::errorfln("{}", a)!;
 10
-g++> ++a;
-g++> cout << a << endl;
+hare> a += 1;
+hare> fmt::printfln("{}",a)!;
 11
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )
@@ -769,27 +805,27 @@ g++>
 
 def test_undo_stderr_then_new_commands():
 	commands = [
-		'int a = 5;',
-		'++a;',
+		'let a = 5;',
+		'a += 1;',
 		'.u',
-		'--a;',
-		'--a;',
+		'a -= 1;',
+		'a -= 1;',
 		'.u',
-		'cerr << a << endl;',
+		r'fmt::errorfln("{}", a)!;',
 		]
 
 	expected_output = (
-r'''g++> int a = 5;
-g++> ++a;
-g++> .u
-[Undone '    ++a;'.]
-g++> --a;
-g++> --a;
-g++> .u
-[Undone '    --a;'.]
-g++> cerr << a << endl;
+r'''hare> let a = 5;
+hare> a += 1;
+hare> .u
+[Undone '    a += 1;'.]
+hare> a -= 1;
+hare> a -= 1;
+hare> .u
+[Undone '    a -= 1;'.]
+hare> fmt::errorfln("{}", a)!;
 4
-g++> 
+hare> 
 ''' )
 
 	run_program( commands, expected_output )

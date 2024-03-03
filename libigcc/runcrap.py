@@ -1,7 +1,7 @@
 # icrap - a read-eval-print loop for C/C++ programmers
 #
-# Copyright (C) 2009 Andy Balaam
-# with python3, rust, hare, and tcc support by Henry Kroll III
+# igcc Copyright (C) 2009 Andy Balaam
+# with python3, rust, hare, and other support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -50,7 +50,7 @@ lib_command = ( "-l$cmd", )
 
 #---------------
 
-incl_re = re.compile( r"\s*#\s*include\s" )
+incl_re = re.compile( r"\s*(#\s*include)\s" )
 
 #---------------
 
@@ -74,7 +74,6 @@ def create_read_line_function( inputfile, prompt ):
         return lambda: read_line_from_file( inputfile, prompt )
 
 def get_temporary_file_name():
-    # write source to input file
     suff = ".exe" if platform.system() == 'Windows' else ""
     outfile = tempfile.NamedTemporaryFile( prefix = "icrap", suffix = suff )
     outfilename = outfile.name
@@ -110,7 +109,7 @@ def run_compile( subs_compiler_command, runner ):
     crap_process = subprocess.Popen( ["crap", "-"],
         stdin = subprocess.PIPE, stdout = subprocess.PIPE)
 
-    # Create tee subprocess to intercept and print the C code
+    # Create tee subprocess to intercept and write the C code
     tee = subprocess.Popen(['tee', srcfile],
         stdin = crap_process.stdout, stdout = subprocess.PIPE)
 
@@ -120,7 +119,7 @@ def run_compile( subs_compiler_command, runner ):
 
     # write source code to crap_process stdin and flush stream
     source = source_code.get_full_source(runner)
-    if runner.options.v > 1:
+    if runner.options.v > 2:
         print(source)
     crap_process.stdin.write(source.encode("utf-8"))
     crap_process.stdin.flush()
@@ -201,7 +200,7 @@ class Runner:
 
         inp = 1
         while inp is not None:
-            inp = read_line()
+            inp = self.inp = read_line()
             if inp is not None:
 
                 col_inp, run_cmp = (
@@ -209,13 +208,12 @@ class Runner:
                 if col_inp:
                     if self.input_num < len( self.user_input ):
                         self.user_input = self.user_input[ : self.input_num ]
-                        self.user_input.append( UserInput( "    " + inp, typ ) )
-                    if incl_re.match( inp ):
+                    if incl_re.match( inp ) or not run_cmp:
                         typ = UserInput.INCLUDE
-                        self.user_input.append( UserInput( inp, typ ) )
+                        self.user_input.append( UserInput( self.inp, typ ) )
                     else:
                         typ = UserInput.COMMAND
-                        self.user_input.append( UserInput( "    " + inp, typ ) )
+                        self.user_input.append( UserInput( "    " + self.inp, typ ) )
                     self.input_num += 1
 
                 if run_cmp:
@@ -269,6 +267,10 @@ class Runner:
             self.output_chars_printed -= undone_input.output_chars
             self.error_chars_printed -= undone_input.error_chars
             source = source_code.get_full_source(self)
+            crap_process = subprocess.Popen( ["crap", "-"],
+                    stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+            stdout, stderr = crap_process.communicate(source.encode())
+            source = stdout.decode("utf-8")
             with open(srcfile, 'w') as file:
                 file.write(source)
                 file.close()

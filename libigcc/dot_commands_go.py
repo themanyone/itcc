@@ -1,6 +1,7 @@
 # igo - a read-eval-print loop for C/C++, hare & rust programmers
 #
-# Copyright (C) 2009 Andy Balaam
+# igcc Copyright (C) 2009 Andy Balaam
+# with python3, rust, hare, and other support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,7 +22,6 @@ from . import source_code_go as source_code
 from . import copying
 import subprocess
 import os
-from glob import glob
 
 # documentation search paths
 home = os.environ.get('HOME')
@@ -30,11 +30,11 @@ class IGCCQuitException(Exception):
     pass
 
 def highlight( code ):
-    cmd = "highlight --syntax=go -O ansi"
+    cmd = "highlight -f -S go -O xterm256 -"
     print_proc = subprocess.Popen( cmd, shell=True, 
     stdin = subprocess.PIPE, stdout = subprocess.PIPE )
     stdout, stderr = print_proc.communicate(code.encode())
-    print(stdout.decode("utf-8"))
+    print(stdout.decode("utf-8").strip())
 
 def dot_c( runner ):
     print(copying.copying)
@@ -43,6 +43,26 @@ def dot_c( runner ):
 def dot_e( runner ):
     if runner is not None and hasattr(runner.compile_error, "decode"):
         print(runner.compile_error.decode().strip('\n'))
+    return False, False
+
+def dot_f( runner ):
+    print("Function entry mode. Enter a blank line to finish. CTRL-C to cancel.")
+    input_list = []
+    try:
+        while True:
+            line = input()
+            if not line: break
+            input_list.append(line)
+        runner.inp = "\n".join(input_list)
+    except:
+        return False, False
+    # return yes we want to input the function, but no to compiling it
+    return True, False
+
+def dot_g( runner ):
+    cmd = "man -k library | highlight --force=rust -O xterm256"
+    run_process = subprocess.Popen( cmd, shell=True )
+    run_process.wait()
     return False, False
 
 def dot_q( runner ):
@@ -73,6 +93,12 @@ def dot_u( runner ):
         print("[Nothing to undo.]")
     return False, False
 
+def dot_v( runner ):
+    run_process = subprocess.Popen(["xdg-open", docs_url],
+    stdout = subprocess.PIPE, stderr = subprocess.PIPE )
+    stdout, stderr = run_process.communicate()
+    return False, False
+
 def dot_w( runner ):
     print(copying.warranty)
     return False, False
@@ -80,14 +106,17 @@ def dot_w( runner ):
 dot_commands = {
     ".c" : ( "Show copying information", dot_c ),
     ".e" : ( "Show the last compile errors/warnings", dot_e ),
+    ".f" : ( "Try function entry mode", dot_f ),
+    ".g" : ( "Get list of c libraries to show man pages about", dot_g ),
     ".h" : ( "Show this help message", None ),
-    ".h [lib]" : ("Show help about go [lib]", None ),
+    ".h [cmd]" : ("Show help about go [cmd]", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
     ".L" : ( "List the whole program as given to the compiler", dot_L ),
+    ".m [lib]" : ( "Show man page about [cmd or lib]", None ),
     ".r" : ( "Redo undone command", dot_r ),
     ".u" : ( "Undo previous command", dot_u ),
-    ".v" : ( "View Language Documentation", None ),
+    ".v" : ( "View Online Documentation", dot_v ),
     ".w" : ( "Show warranty information", dot_w ),
     }
 
@@ -102,41 +131,20 @@ def dot_h( runner ):
 def process( inp, runner ):
     if inp == ".h":
         return dot_h( runner )
-
     if inp[:3] == ".h ":
-        find = ["find", "/usr/lib/golang/api/", "-name", f"*{inp[3:]}.zig"]
-        pick = ["pick"]
-        pick_process = subprocess.Popen(pick,
-        stdout = subprocess.PIPE, stdin = subprocess.PIPE )
+        find = ["grep", inp[3:], "/usr/lib/golang/api/", "-rs"]
         find_process = subprocess.Popen(find,
-        stdout = pick_process.stdin, stderr = subprocess.PIPE )
-        stdout, stderr = pick_process.communicate()
+        stdout = subprocess.PIPE, stdin = subprocess.PIPE )
+        stdout, stderr = find_process.communicate()
         if find_process.stderr is not None:
             print(find_process.stderr)
-        f = stdout.decode("utf-8").strip()
-        view = f"highlight --syntax=c -O ansi {f}| more"
-        print(view)
-        view_process = subprocess.Popen(view, shell=True)
-        view_process.wait()
+        highlight(stdout.decode("utf-8"))
         return False, False
-    elif inp == ".s":
-        find = ["find", "/usr/lib/golang/api/", "-name", "*.txt"]
-        find_process = subprocess.Popen(find,
-        stdout = subprocess.PIPE, stderr = subprocess.PIPE )
-        stdout, stderr = find_process.communicate()
-        libs = stdout.decode("utf-8").split("\n")
-        libs = [os.path.basename(line).strip(".zig") for line in libs]
-        libs = "\t".join(libs)
-        print(f"""
-Searchable Go Libraries
-
-{libs}
-""")
-        return False, False
-    if inp == ".v":
-        run_process = subprocess.Popen(["xdg-open", docs_url],
-        stdout = subprocess.PIPE, stderr = subprocess.PIPE )
+    elif inp[:3] == ".m ":
+        run_process = subprocess.Popen(["man", "-S", "3:7:0p", f"{inp[3:]}"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE )
         stdout, stderr = run_process.communicate()
+        highlight(stdout.decode("utf-8"))
         return False, False
     for cmd in sorted( dot_commands.keys() ):
         if inp == cmd:

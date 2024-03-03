@@ -1,7 +1,7 @@
 # itcc - a read-eval-print loop for C/C++, rust & hare programmers
 #
-# Copyright (C) 2009 Andy Balaam
-# with python3, rust, hare, and tcc support by Henry Kroll III
+# igcc Copyright (C) 2009 Andy Balaam
+# with python3, rust, hare, and other support by Henry Kroll III
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -49,7 +49,7 @@ lib_command = ( "-l$cmd", )
 
 #---------------
 
-incl_re = re.compile( r"\s*#\s*include\s" )
+incl_re = re.compile( r"\s*(#\s*include)\s" )
 
 #---------------
 
@@ -105,7 +105,6 @@ def get_compiler_command( options, extra_options, outfilename ):
 
 
 def run_compile( subs_compiler_command, runner ):
-    # print("$ " + ( " ".join( subs_compiler_command ) ))
     compile_process = subprocess.Popen( subs_compiler_command,
         stdin = subprocess.PIPE, stderr = subprocess.PIPE )
     source = source_code.get_full_source(runner)
@@ -183,7 +182,7 @@ class Runner:
 
         inp = 1
         while inp is not None:
-            inp = read_line()
+            inp = self.inp = read_line()
             if inp is not None:
 
                 col_inp, run_cmp = (
@@ -191,13 +190,12 @@ class Runner:
                 if col_inp:
                     if self.input_num < len( self.user_input ):
                         self.user_input = self.user_input[ : self.input_num ]
-                        self.user_input.append( UserInput( "    " + inp, typ ) )
-                    if incl_re.match( inp ):
+                    if incl_re.match( inp ) or not run_cmp:
                         typ = UserInput.INCLUDE
-                        self.user_input.append( UserInput( inp, typ ) )
+                        self.user_input.append( UserInput( self.inp, typ ) )
                     else:
                         typ = UserInput.COMMAND
-                        self.user_input.append( UserInput( "    " + inp, typ ) )
+                        self.user_input.append( UserInput( "    " + self.inp, typ ) )
                     self.input_num += 1
 
                 if run_cmp:
@@ -209,9 +207,10 @@ class Runner:
 
                     if self.compile_error is not None:
                         err = self.compile_error.decode().strip('\n')
-                        if self.options.v > 1:
+                        if self.options.v > 2:
                             print(err)
-                        elif err.find("<eof>") < 0 or self.options.e:
+                        elif (err.find("empty block") < 0
+                          and err.find("end of file") < 0) or self.options.e:
                             print("[Compile error - type .e to see it.]")
                     else:
                         if self.options.v > 0:

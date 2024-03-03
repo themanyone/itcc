@@ -3,9 +3,9 @@ Interactive TCC
 
 Make programming more like Python.
 
-An command-line shell for C, C++, Rust, Hare, Zig, and the concise, regex-aware CPP 
-(CRAP). Also known as an evaluation context, or read-eval-print loop (REPL), the shell 
-allows programers to type commands and see immediate results.
+An command-line shell for C, C++, Rust, Hare, Go, Zig, and the concise, regex-aware 
+CPP (CRAP). Also known as an evaluation context, or read-eval-print loop (REPL), the 
+shell allows programers to type commands and see immediate results.
 
 About this project. Interactive TCC (itcc) is a small python3 utility originally 
 forked from Interactive GCC (igcc). And we keep adding other languages to it. We do 
