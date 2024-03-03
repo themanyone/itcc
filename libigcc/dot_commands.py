@@ -102,12 +102,12 @@ def dot_w( runner ):
 dot_commands = {
     ".c" : ( "Show copying information", dot_c ),
     ".e" : ( "Show the last compile errors/warnings", dot_e ),
-    ".f" : ( "Try function entry mode", dot_f ),
+    ".f" : ( "Function or top-level declaration", dot_f ),
     ".g" : ( "Get list of c libraries to show man pages about", dot_g ),
     ".h" : ( "Show this help message", None ),
     ".q" : ( "Quit", dot_q ),
     ".l" : ( "List the code you have entered", dot_l ),
-    ".L" : ( "List the generated C code fed to the compiler", dot_L ),
+    ".L" : ( "List the C code fed to the compiler", dot_L ),
     ".m [lib]" : ( "Show man page about [cmd or lib]", None ),
     ".r" : ( "Redo undone command", dot_r ),
     ".u" : ( "Undo previous command", dot_u ),
@@ -127,10 +127,9 @@ def process( inp, runner ):
     if inp == ".h":
         return dot_h( runner )
     elif inp[:3] == ".m ":
-        run_process = subprocess.Popen(["man", "-S", "3:7:0p", f"{inp[3:]}"],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-        stdout, stderr = run_process.communicate()
-        highlight(stdout.decode("utf-8"))
+        view = "man -S 3:7:0p stdlib.h|highlight -S c -O xterm256 -"
+        run_process = subprocess.Popen(view, shell=True)
+        run_process.wait()
         return False, False
     for cmd in sorted( dot_commands.keys() ):
         if inp == cmd:
