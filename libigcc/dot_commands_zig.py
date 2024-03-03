@@ -116,7 +116,7 @@ dot_commands = {
     ".L" : ( "List the whole program as given to the compiler", dot_L ),
     ".r" : ( "Redo undone command", dot_r ),
     ".u" : ( "Undo previous command", dot_u ),
-    ".v" : ( "View Language Documentation", None ),
+    ".v" : ( "View Language Documentation", dot_v ),
     ".w" : ( "Show warranty information", dot_w ),
     }
 
