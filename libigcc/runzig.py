@@ -40,7 +40,7 @@ from . import version
 # One day these will be in a config file
 
 prompt = "zig> "
-compiler_command = ( "zig", "build-exe", "-o", "$lib_dirs", "$libs", "$srcfile" )
+compiler_command = ( "zig", "build-exe", "$include_dirs", "-o", "$lib_dirs", "$libs", "$srcfile" )
 
 include_dir_command = ( "-I$cmd", )
 lib_dir_command = ( "-L$cmd", )
@@ -89,16 +89,16 @@ def get_compiler_command( options, extra_options, srcfilename, exefilename ):
     ret = []
 
     for part in compiler_command:
-        if part == "$srcfile":
-            ret.append( part.replace( "$srcfile", srcfilename ) )
-        elif part == "-o":
+        if part == "-o":
             append_multiple( extra_options, extra_options, ret)
+        elif part == "$include_dirs":
+            append_multiple( include_dir_command, options.INCLUDE, ret )
         elif part == "$lib_dirs":
             append_multiple( lib_dir_command, options.LIBDIR,ret )
         elif part == "$libs":
             append_multiple( lib_command, options.LIB, ret )
         else:
-            ret.append( part.replace( "$outfile", exefilename ) )
+            ret.append( part.replace( "$srcfile", srcfilename ) )
     return ret
 
 

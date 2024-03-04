@@ -100,7 +100,6 @@ def get_compiler_command( options, extra_options, outfilename ):
             append_multiple( lib_command, options.LIB, ret )
         else:
             ret.append( part.replace( "$outfile", outfilename ) )
-
     return ret
 
 
