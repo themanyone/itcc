@@ -1,0 +1,975 @@
+#!/usr/bin/python
+
+# igcc - a read-eval-print loop for C/C++ programmers
+#
+# Copyright (C) 2009 Andy Balaam
+# with python3, go, rust, tcc & other support by Henry Kroll III
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA 02110-1301, USA.
+
+import re
+import os
+import libigcc.runzig
+from libigcc.runzig import UserInput
+import libigcc.source_code_rs
+import libigcc.version
+import shutil
+
+class FakeWriteableFile:
+	def __init__( self ):
+		self.lines = []
+
+	def write( self, line ):
+		self.lines.append( line )
+
+class FakeReadableFile:
+	def __init__( self, lines ):
+		self.lines = lines
+
+	def readline( self ):
+		if len( self.lines ) == 0:
+			return None
+		line = self.lines[0]
+		self.lines = self.lines[1:]
+		return line
+
+def assert_strings_equal( str1, str2 ):
+	if str1 == str2:
+		return
+
+	raise AssertionError( "\n" + str1 + "\n!=\n" + str2 )
+
+def assert_strings_match( string, re_string ):
+	cmp_re = re.compile( re_string, re.DOTALL )
+
+	if cmp_re.match( string ):
+		return
+
+	raise AssertionError( "\n" + string
+		+ "\ndoes not match regular expression\n" + re_string )
+
+def strip_codes(text):
+	# Define the regular expression pattern to match ANSI escape codes
+	ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
+	# Use the pattern to remove the color codes from the text
+	stripped_text = ansi_escape.sub('', text)
+	return stripped_text
+
+def run_program( commands, expected_output, print_welcome = False,
+		argv = None ):
+
+	outputfile = FakeWriteableFile()
+	stdinfile = FakeReadableFile( commands )
+	ret = libigcc.runzig.run( outputfile, stdinfile, print_welcome, argv )
+	txt = "".join( outputfile.lines )
+	assert_strings_equal( strip_codes(txt), expected_output )
+
+	return ret
+
+def run_program_regex_output( commands, expected_output_re ):
+	outputfile = FakeWriteableFile()
+	stdinfile = FakeReadableFile( commands )
+	libigcc.runzig.run( outputfile, stdinfile, False )
+
+	assert_strings_match( "".join( outputfile.lines ), expected_output_re )
+
+def test_print_argv():
+	commands = ["var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};",
+    "const gpa = general_purpose_allocator.allocator();",
+    "const args = try std.process.argsAlloc(gpa);",
+    "defer std.process.argsFree(gpa, args);",
+    "for (args[2..]) |arg, i| {",
+    "   std.debug.print(\"{}: {s}\\n\", .{ i, arg });",
+    "}"]
+	expected_output = """zig> var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
+zig> const gpa = general_purpose_allocator.allocator();
+zig> const args = try std.process.argsAlloc(gpa);
+zig> defer std.process.argsFree(gpa, args);
+zig> for (args[2..]) |arg, i| {
+zig>    std.debug.print("{}: {s}\\n", .{ i, arg });
+zig> }
+0: bar
+1: baz
+zig> 
+""";
+	run_program( commands, expected_output, False, ['--', 'foo', 'bar', 'baz'] )
+
+def test_declare_var():
+	commands = [ "var a: i32 = 0;" ]
+	expected_output = 'zig> var a: i32 = 0;\nzig> \n'
+	run_program( commands, expected_output )
+
+def test_declare_var_assign():
+	commands = [ "var a: i32 = 10;" ]
+	expected_output = 'zig> var a: i32 = 10;\nzig> \n'
+	run_program( commands, expected_output )
+
+def test_declare_and_assign_var_then_print():
+	commands = [ "var a: i32 = 13;",
+		'std.debug.print("{}", .{a});' ]
+
+	expected_output = (
+'''zig> var a: i32 = 13;
+zig> std.debug.print("{}", .{a});
+13
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_print_twice():
+	commands = [ "var a: i32 = 10;",
+		'std.debug.print("{}", .{a});',
+		'a += 1;',
+		'std.debug.print("{}", .{a});' ]
+	expected_output = (
+'''zig> var a: i32 = 10;
+zig> std.debug.print("{}", .{a});
+10
+zig> a += 1;
+zig> std.debug.print("{}", .{a});
+11
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+def test_compile_error():
+	commands = [ "var a: i32" ] # no semicolon
+
+	expected_output = (
+'''zig> var a: i32
+[Compile error - type .e to see it.]
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+def test_compile_error_display():
+	commands = [
+		"var a: i32", # no semicolon
+		".e" ]
+
+	# Just look for a string "xpected" in the compiler output.
+	expected_output_re = (
+u'''.*expected.*''' )
+
+	run_program_regex_output( commands, expected_output_re )
+
+
+def test_include():
+	commands = [r"""const c = @cImport({
+    // See https://github.com/ziglang/zig/issues/515
+    @cDefine("_NO_CRT_STDIO_INLINE", "1");
+    @cInclude("stdio.h");
+});
+_ = c.printf("hello\n");
+"""];
+	expected_output = (
+r'''zig> const c = @cImport({
+    // See https://github.com/ziglang/zig/issues/515
+    @cDefine("_NO_CRT_STDIO_INLINE", "1");
+    @cInclude("stdio.h");
+});
+_ = c.printf("hello\n");
+
+hello
+zig> 
+''' )
+
+	argv = [ "-lc" ]
+	run_program( commands, expected_output, argv = argv )
+
+def test_multiple_repeated_includes():
+	commands = [r"""const c = @cImport({
+    // See https://github.com/ziglang/zig/issues/515
+    @cDefine("_NO_CRT_STDIO_INLINE", "1");
+    @cInclude("stdio.h");
+    @cInclude("stdlib.h");
+});
+_ = c.printf("hello\n");
+_ = c.printf("%d\n", c.atoi("42i"));
+"""]
+
+	expected_output = (
+r'''zig> const c = @cImport({
+    // See https://github.com/ziglang/zig/issues/515
+    @cDefine("_NO_CRT_STDIO_INLINE", "1");
+    @cInclude("stdio.h");
+    @cInclude("stdlib.h");
+});
+_ = c.printf("hello\n");
+_ = c.printf("%d\n", c.atoi("42i"));
+
+hello
+42
+zig> 
+''')
+
+	argv = [ "-lc" ]
+	run_program( commands, expected_output, argv = argv )
+
+def test_list_program():
+	commands = [
+		'var a: i32 = 0;',
+		'a += 2;',
+		'use std::str;',
+		'.l' ]
+
+	expected_output = (
+'''zig> var a: i32 = 0;
+zig> a += 2;
+zig> use std::str;
+[Compile error - type .e to see it.]
+zig> .l
+use std::str;
+
+    var a: i32 = 0;
+    a += 2;
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+class FakeRunner:
+	def __init__( self, user_commands_string, user_includes_string ):
+		self.user_commands_string = user_commands_string
+		self.user_includes_string = user_includes_string
+
+	def get_user_commands_string( self ):
+		return self.user_commands_string
+
+	def get_user_includes_string( self ):
+		return self.user_includes_string
+
+def test_list_full_program():
+	commands = [
+		'var a: i32 = 0;',
+		'a += 2;',
+		'use std::str;',
+		'.L' ]
+
+	fakerunner = FakeRunner( 'var a: i32;\na += 2;\n',
+		"#include <vector>\n" )
+
+	expected_output = (
+'''zig> var a: i32 = 0;
+zig> a += 2;
+zig> use std::str;
+[Compile error - type .e to see it.]
+zig> .L
+const std = @import("std");
+use std::str;
+pub fn main() !void {
+    var a: i32 = 0;
+    a += 2;
+}
+zig> 
+''')
+
+	run_program( commands, expected_output )
+
+def test_help_message():
+	commands = [
+		'.h' ]
+
+	expected_output_re = ".*Show this help message"
+
+	run_program_regex_output( commands, expected_output_re )
+
+def test_quit():
+	commands = [
+		'.q' ]
+
+	expected_output = "zig> .q\n\n"
+
+	ret = run_program( commands, expected_output )
+
+	assert_strings_equal( ret, "quit" )
+
+def test_welcome_message():
+	commands = []
+	expected_output = (
+'''izig $version
+Released under GNU GPL version 2 or later, with NO WARRANTY.
+Get zig from https://ziglang.org/
+Type ".h" for help.
+
+zig> 
+'''.replace( "$version", libigcc.version.VERSION ))
+
+	run_program( commands, expected_output, True )
+
+def test_include_dir_on_cmd_line():
+	commands = [ 'const c = @cImport({',
+'    // See https://github.com/ziglang/zig/issues/515',
+'    @cDefine("_NO_CRT_STDIO_INLINE", "1");',
+'    @cInclude("stdio.h");',
+'    @cInclude("hello.h");',
+'});',
+'c.hello();',
+]
+
+	expected_output = (
+'''zig> const c = @cImport({
+zig>     // See https://github.com/ziglang/zig/issues/515
+zig>     @cDefine("_NO_CRT_STDIO_INLINE", "1");
+zig>     @cInclude("stdio.h");
+zig>     @cInclude("hello.h");
+zig> });
+zig> c.hello();
+Hello, 
+zig> 
+''' )
+
+	header = """
+#ifndef HELLO_H
+#define HELLO_H
+#include <stdio.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+void hello() {
+    puts("Hello, ");
+}
+#ifdef __cplusplus
+}
+#endif
+#endif // HELLO_H
+"""
+
+	args = [ "-I.", "-lc" ]
+	with open("/tmp/hello.h", "w+") as f:
+		f.write(header)
+		f.close()
+	run_program( commands, expected_output, argv = args )
+
+def test_2_include_dirs_on_cmd_line():
+	commands = [ 'const c = @cImport({',
+'    // See https://github.com/ziglang/zig/issues/515',
+'    @cDefine("_NO_CRT_STDIO_INLINE", "1");',
+'    @cInclude("stdio.h");',
+'    @cInclude("hello.h");',
+'    @cInclude("world.h");',
+'});',
+'c.hello();',
+'c.world();',
+]
+	expected_output = (
+'''zig> const c = @cImport({
+zig>     // See https://github.com/ziglang/zig/issues/515
+zig>     @cDefine("_NO_CRT_STDIO_INLINE", "1");
+zig>     @cInclude("stdio.h");
+zig>     @cInclude("hello.h");
+zig>     @cInclude("world.h");
+zig> });
+zig> c.hello();
+Hello, 
+zig> c.world();
+world!
+zig> 
+''' )
+
+	header = """
+#ifndef WORLD_H
+#define WORLD_H
+#include <stdio.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+void world() {
+    puts("world!");
+}
+#ifdef __cplusplus
+}
+#endif
+#endif // WORLD_H"""
+
+	args = [ "-I.", "-lc" ]
+	with open("/tmp/world.h", "w+") as f:
+		f.write(header)
+		f.close()
+	run_program( commands, expected_output, argv = args )
+	if os.path.isfile('hello.h'):
+		os.remove('hello.h')
+	if os.path.isfile('world.h'):
+		os.remove('world.h')
+
+
+def test_lib():
+	commands = [ 'var a: i32 = @maximum(4, 6);',
+		'std.debug.print("{}", .{a});', ]
+
+	expected_output = (
+'''zig> var a: i32 = @maximum(4, 6);
+zig> std.debug.print("{}", .{a});
+6
+zig> 
+''' )
+
+	# argv = [ "-lm" ]
+
+	run_program( commands, expected_output )
+
+
+def test_print_license():
+	commands = [ '.c' ]
+
+	expected_output_re = (
+r'''zig\> \.c
+.*GNU GENERAL PUBLIC LICENSE.*
+zig\> 
+''' )
+
+	run_program_regex_output( commands, expected_output_re )
+
+
+
+def test_print_warranty():
+	commands = [ '.w' ]
+
+	expected_output_re = (
+r'''zig\> \.w
+.*Disclaimer of Warranty.*
+zig\> 
+''' )
+
+	run_program_regex_output( commands, expected_output_re )
+
+
+def test_runner_get_user_input():
+	runner = libigcc.runzig.Runner( None, None, None, None, None )
+	runner.user_input = [
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND),
+		UserInput("2", UserInput.COMMAND) ]
+	runner.input_num = 3
+	assert( tuple( runner.get_user_input() ) == (
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND),
+		UserInput("2", UserInput.COMMAND) ) )
+
+	runner.input_num = 2
+	assert( tuple( runner.get_user_input() ) == (
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND) ) )
+
+	runner.input_num = 1
+	assert( tuple( runner.get_user_input() ) == (
+		UserInput("0", UserInput.COMMAND), ) )
+
+
+def test_runner_get_user_commands():
+	runner = libigcc.runzig.Runner( None, None, None, None, None )
+	runner.user_input = [
+		UserInput("0", UserInput.COMMAND),
+		UserInput("1", UserInput.COMMAND),
+		UserInput("X", UserInput.INCLUDE),
+		UserInput("2", UserInput.COMMAND) ]
+	runner.input_num = 4
+	assert( tuple( runner.get_user_commands() ) == ( "0", "1", "2" ) )
+
+	runner.input_num = 2
+	assert( tuple( runner.get_user_commands() ) == ( "0", "1" ) )
+
+	runner.input_num = 1
+	assert( tuple( runner.get_user_commands() ) == ( "0", ) )
+
+
+def test_undo_1():
+	commands = [
+		'var a: i32 = 0;',
+		'a = 5;',
+		'foobar',
+		'.u',
+		'std.debug.print("{}", .{a});',
+		]
+
+	expected_output = (
+r'''zig> var a: i32 = 0;
+zig> a = 5;
+zig> foobar
+[Compile error - type .e to see it.]
+zig> .u
+[Undone '    foobar'.]
+zig> std.debug.print("{}", .{a});
+5
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_2():
+	commands = [
+		'var a: i32 = 5;',
+		'a += 1;',
+		'a += 1;',
+		'1 += 1;',
+		'.u',
+		'.u',
+		'std.debug.print("{}", .{a});',
+		]
+
+	expected_output = (
+r'''zig> var a: i32 = 5;
+zig> a += 1;
+zig> a += 1;
+zig> 1 += 1;
+[Compile error - type .e to see it.]
+zig> .u
+[Undone '    1 += 1;'.]
+zig> .u
+[Undone '    a += 1;'.]
+zig> std.debug.print("{}", .{a});
+6
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_before_beginning():
+	commands = [
+		'var a: i32 = 5;',
+		'.u',
+		'.u',
+		'.u',
+		'std.debug.print("{}", .{a});',
+		'.u',
+		'var b: i32 = 7;',
+		' std.debug.print("{}", .{b});',
+		]
+
+	expected_output = (
+r'''zig> var a: i32 = 5;
+zig> .u
+[Undone '    var a: i32 = 5;'.]
+zig> .u
+[Nothing to undo.]
+zig> .u
+[Nothing to undo.]
+zig> std.debug.print("{}", .{a});
+[Compile error - type .e to see it.]
+zig> .u
+[Undone '    std.debug.print("{}", .{a});'.]
+zig> var b: i32 = 7;
+zig>  std.debug.print("{}", .{b});
+7
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_includes_and_commands():
+	commands = [
+		'const rem = @import("std").math.rem;',
+		'var a: i32 = 5;',
+		'var b: i32 = rem(a, 3);',
+		'.u',
+		'.u',
+		'.u',
+		]
+
+	expected_output = (
+r'''zig> const rem = @import("std").math.rem;
+zig> var a: i32 = 5;
+zig> var b: i32 = rem(a, 3);
+zig> .u
+[Undone '    var b: i32 = rem(a, 3);'.]
+zig> .u
+[Undone '    var a: i32 = 5;'.]
+zig> .u
+[Undone '    const rem = @import("std").math.rem;'.]
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_redo_1():
+	commands = [
+		'var a: i32 = 1;',
+		'a += 1;',
+		'.u',
+		'.r',
+		'std.debug.print("{}", .{a});',
+		]
+
+	expected_output = (
+r'''zig> var a: i32 = 1;
+zig> a += 1;
+zig> .u
+[Undone '    a += 1;'.]
+zig> .r
+[Redone '    a += 1;'.]
+zig> std.debug.print("{}", .{a});
+2
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+
+
+def test_redo_2():
+	commands = [
+		'var a: i32 = 1;',
+		'a += 1;',
+		'.u',
+		'.u',
+		'.r',
+		'.r',
+		'std.debug.print("{}", .{a});',
+		]
+
+	expected_output = (
+r'''zig> var a: i32 = 1;
+zig> a += 1;
+zig> .u
+[Undone '    a += 1;'.]
+zig> .u
+[Undone '    var a: i32 = 1;'.]
+zig> .r
+[Redone '    var a: i32 = 1;'.]
+zig> .r
+[Redone '    a += 1;'.]
+zig> std.debug.print("{}", .{a});
+2
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+
+
+def test_redo_before_beginning():
+	commands = [
+		'var a: i32 = 1;',
+		'a += 1;',
+		'.u',
+		'.u',
+		'.u',
+		'.r',
+		'.r',
+		'std.debug.print("{}", .{a});',
+		]
+
+	expected_output = (
+r'''zig> var a: i32 = 1;
+zig> a += 1;
+zig> .u
+[Undone '    a += 1;'.]
+zig> .u
+[Undone '    var a: i32 = 1;'.]
+zig> .u
+[Nothing to undo.]
+zig> .r
+[Redone '    var a: i32 = 1;'.]
+zig> .r
+[Redone '    a += 1;'.]
+zig> std.debug.print("{}", .{a});
+2
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+
+def test_redo_after_end():
+	commands = [
+		'var a: i32 = 1;',
+		'a += 1;',
+		'.u',
+		'.r',
+		'.r',
+		'std.debug.print("{}", .{a});',
+		]
+
+	expected_output = (
+r'''zig> var a: i32 = 1;
+zig> a += 1;
+zig> .u
+[Undone '    a += 1;'.]
+zig> .r
+[Redone '    a += 1;'.]
+zig> .r
+[Nothing to redo.]
+zig> std.debug.print("{}", .{a});
+2
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_redo_includes_and_commands():
+	commands = [
+		'const c = @cImport({',
+		'    @cDefine("_NO_CRT_STDIO_INLINE", "1");',
+		'    @cInclude("stdio.h");',
+		'});'
+		'const items = [_]i32 { 4, 5, 3, 4, 0 };',
+		'for (items) |value, i| {',
+		'    _ = c.printf("%d:%d  ", i, value);',
+		'}',
+		'.u',
+		'.u',
+		'.u',
+		'.u',
+		'.u',
+		'.u',
+		'.u',
+		'.u',
+		'.r',
+		'.r',
+		'.r',
+		'.r',
+		'.r',
+		'.r',
+		'.r',
+		'.r',
+		]
+
+	expected_output = (
+r'''zig> const c = @cImport({
+zig>     @cDefine("_NO_CRT_STDIO_INLINE", "1");
+zig>     @cInclude("stdio.h");
+zig> });const items = [_]i32 { 4, 5, 3, 4, 0 };
+zig> for (items) |value, i| {
+zig>     _ = c.printf("%d:%d  ", i, value);
+zig> }
+0:4  1:5  2:3  3:4  4:0  
+zig> .u
+[Undone '    }'.]
+zig> .u
+[Undone '        _ = c.printf("%d:%d  ", i, value);'.]
+zig> .u
+[Undone '    for (items) |value, i| {'.]
+zig> .u
+[Undone '    });const items = [_]i32 { 4, 5, 3, 4, 0 };'.]
+zig> .u
+[Undone '        @cInclude("stdio.h");'.]
+zig> .u
+[Undone '        @cDefine("_NO_CRT_STDIO_INLINE", "1");'.]
+zig> .u
+[Undone '    const c = @cImport({'.]
+zig> .u
+[Nothing to undo.]
+zig> .r
+[Redone '    const c = @cImport({'.]
+zig> .r
+[Redone '        @cDefine("_NO_CRT_STDIO_INLINE", "1");'.]
+zig> .r
+[Redone '        @cInclude("stdio.h");'.]
+zig> .r
+[Redone '    });const items = [_]i32 { 4, 5, 3, 4, 0 };'.]
+zig> .r
+[Redone '    for (items) |value, i| {'.]
+zig> .r
+[Redone '        _ = c.printf("%d:%d  ", i, value);'.]
+zig> .r
+[Redone '    }'.]
+0:4  1:5  2:3  3:4  4:0  
+zig> .r
+[Nothing to redo.]
+zig> 
+''' )
+
+	run_program( commands, expected_output, False, ['-lc'] )
+
+
+def test_undo_then_new_commands():
+	commands = [
+		'var a: i32 = 5;',
+		'a += 1;',
+		'.u',
+		'a -= 1;',
+		'a -= 1;',
+		'.u',
+		'std.debug.print("{}", .{a});',
+		]
+
+	expected_output = (
+r'''zig> var a: i32 = 5;
+zig> a += 1;
+zig> .u
+[Undone '    a += 1;'.]
+zig> a -= 1;
+zig> a -= 1;
+zig> .u
+[Undone '    a -= 1;'.]
+zig> std.debug.print("{}", .{a});
+4
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_redo_with_output():
+	commands = [
+		'var a: i32 = 56;',
+		'std.debug.print("{}\\n", .{a});',
+		'.u',
+		'.r',
+		'.u',
+		'std.debug.print("{}\\n", .{12});',
+		]
+
+	expected_output = (
+r'''zig> var a: i32 = 56;
+zig> std.debug.print("{}\n", .{a});
+56
+zig> .u
+[Undone '    std.debug.print("{}\n", .{a});'.]
+zig> .r
+[Redone '    std.debug.print("{}\n", .{a});'.]
+56
+zig> .u
+[Undone '    std.debug.print("{}\n", .{a});'.]
+zig> std.debug.print("{}\n", .{12});
+zig> 
+''' )
+# We hid Zig's error about unused variable a
+
+	run_program( commands, expected_output )
+
+def test_print_stderr_twice():
+	commands = [ 'const eprint = @import("std").debug.print;',
+		"var a: i32 = 10;",
+		'eprint("{}\\n", .{a});',
+		"a += 1;",
+		'eprint("{}\\n", .{a});' ]
+
+	expected_output = (
+r'''zig> const eprint = @import("std").debug.print;
+zig> var a: i32 = 10;
+zig> eprint("{}\n", .{a});
+10
+zig> a += 1;
+zig> eprint("{}\n", .{a});
+11
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_print_stderr_stdout():
+	commands = [ 'const eprint = @import("std").debug.print;',
+		"var a: i32 = 10;",
+		'eprint("{}", .{a});',
+		"a += 1;",
+		'std.debug.print("{}\\n", .{a});' ]
+
+	expected_output = (
+r'''zig> const eprint = @import("std").debug.print;
+zig> var a: i32 = 10;
+zig> eprint("{}", .{a});
+10
+zig> a += 1;
+zig> std.debug.print("{}\n", .{a});
+11
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def test_undo_stderr_then_new_commands():
+	commands = [ 'const eprint = @import("std").debug.print;',
+		'var a: i32 = 5;',
+		'a += 1;',
+		'.u',
+		'a -= 1;',
+		'a -= 1;',
+		'.u',
+		'eprint("{}\\n", .{a});',
+		]
+
+	expected_output = (
+r'''zig> const eprint = @import("std").debug.print;
+zig> var a: i32 = 5;
+zig> a += 1;
+zig> .u
+[Undone '    a += 1;'.]
+zig> a -= 1;
+zig> a -= 1;
+zig> .u
+[Undone '    a -= 1;'.]
+zig> eprint("{}\n", .{a});
+4
+zig> 
+''' )
+
+	run_program( commands, expected_output )
+
+
+def main():
+	test_print_argv()
+	test_declare_var()
+	test_declare_var_assign()
+	test_declare_and_assign_var_then_print()
+	test_print_twice()
+	test_compile_error()
+	test_compile_error_display()
+	test_include()
+	test_multiple_repeated_includes()
+	test_list_program()
+	test_list_full_program()
+	test_help_message();
+	test_quit()
+	test_welcome_message()
+	test_include_dir_on_cmd_line()
+	test_2_include_dirs_on_cmd_line()
+	test_lib()
+	test_print_license()
+	test_print_warranty()
+	test_runner_get_user_input()
+	test_runner_get_user_commands()
+	test_undo_1()
+	test_undo_2()
+	test_undo_before_beginning()
+	test_undo_includes_and_commands()
+	test_redo_1()
+	test_redo_2()
+	test_redo_before_beginning()
+	test_redo_after_end()
+	test_redo_includes_and_commands()
+	test_undo_then_new_commands()
+	test_undo_redo_with_output()
+	test_print_stderr_twice()
+	test_print_stderr_stdout()
+	test_undo_stderr_then_new_commands()
+
+	#test_readline_history();
+	#test_print_command();
+	#test_edit_in_vim();
+	#test_compile_warning()
+	#test_remove_compile_error_message()
+
+	print("All tests passed.")
+
+
+if __name__ == "__main__":
+	main()
+
