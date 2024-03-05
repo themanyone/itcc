@@ -132,7 +132,7 @@ def process( inp, runner ):
         run_process = subprocess.Popen(["haredoc", inp[3:]],
         stdout = subprocess.PIPE, stderr = subprocess.PIPE )
         stdout, stderr = run_process.communicate()
-        highlight(stdout.decode("utf-8"))
+        print(stdout.decode("utf-8"))
         return False, False
     elif inp == ".s":
         print("""

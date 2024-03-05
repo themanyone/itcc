@@ -19,7 +19,7 @@ ad use GCC). The experimntal MOB branch of tcc accepts random contributions from
 anyone, so check it over carefully! Join the active mailing list, contribute fixes, 
 and update often. git clone https://repo.or.cz/tinycc.git/
 
-Now with color listings. So colorama and highlight are required.
+Now with color listings. Colorama and highlight are required.
 
 The main reason we like tcc is instant gratification. Owing to its small download 
 size, and the smallness of the resulting executables, tcc's one-pass build ensures 
@@ -275,7 +275,6 @@ igo 0.3
 Released under GNU GPL version 2 or later, with NO WARRANTY.
 Get go from https://go.dev/                                                                   
 Type ".h" for help.                                                                           
-
 go> fmt.Println("Welcome to the playground!")
 Welcome to the playground!
 go> import "time"
@@ -302,14 +301,39 @@ Supposedly. There appears to be some bugs with detecting what was already printe
 causing some new lines to produce no output. In that case, just press CTRL-C or CTRL-D 
 and restart it. We're working on that...
 
-Downloading and using
----------------------
+Your Editor Is Now a REPL
+=========================
+
+Our replacement is here. Any language. Any editor.
+
+We made a REPL maker! This command is all you need.
+ $ repl.sh [compiler] -run [sources]
+
+It watches `test.c` for changes. If it detects any, it compiles and runs.
+
+Compiler options supported. After `--` my args are available inside script.
+ $ repl.sh tcc $CFLAGS $LIBS -run test.c -- my args
+
+Use `runner` if your compiler does not have a -run option.
+ $ repl.sh runner gcc $CFLAGS $LIBS test.c -- my args
+
+The `hare` build system.
+ $ repl.sh runner hare build hello.ha -- my args
+
+Some new Smurf language? Smurfy.
+ $ repl.sh smurf run papa.smurf -- my args
+
+Get REPL Ace free from https://github.com/themanyone/REPLace
+
+Updating This Package
+=====================
 
 itcc is published on GitHub. Get it from https://github.com/themanyone/itcc where 
 developers can submit bug reports, fork, and pull requests with code contributions.
 
 Other REPLs
 -----------
+REPLAce: a REPL for all languages https://github.com/themanyone/REPLace
 various languages in the browser http://repl.it
 csharp: included with monodevelop http://www.csharphelp.com/
 psysh: comes with php for php code http://php.net
@@ -340,30 +364,6 @@ And then start the program like this:
  cd igcc-0.1
  ./igcc
 
-Then type the C++ code you want to execute. It will be compiled with GCC and the 
-results (if any) will be displayed.
-
-Type .h to see some general help on usage.
-
-Type .h followed by the command name for more help:
-
- .h printf
- .h string
- .h glob
-
-Developing
-----------
-
-IGCC is a small python wrapper around GCC.
-
-Check out the code here:
-
- git clone https://github.com/themanyone/itcc.git
-
-Or browse the source here:
-
-https://github.com/themanyone/itcc
-
 Links
 -----
 
@@ -392,7 +392,7 @@ IGCC is Copyright (C) 2009 Andy Balaam
 IGCC is Free Software released under the terms of the GNU General Public License 
 version 2 or later.
 
-IGCC comes with NO WARRANTY.
+IGCC comes with NO WARRANTY
 
 See the file COPYING for more information.
 
