@@ -5,17 +5,17 @@ Make programming more like Python.
 
 An command-line shell for C, C++, Rust, Hare, Go, Zig, and the concise, regex-aware 
 CPP (CRAP). Also known as an evaluation context, or read-eval-print loop (REPL), the 
-shell allows programers to type commands and see immediate results.
+shell allows programmers to type commands and see immediate results.
 
 About this project. Interactive TCC (itcc) is a small python3 utility originally 
 forked from Interactive GCC (igcc). And we keep adding other languages to it. We do 
-our best to make the code work for us, but it comes with NO WARRANTEEs. You are free 
+our best to make the code work for us, but it comes with NO Warranties. You are free 
 to share and modify free software in according with the GNU General Public License 
 (GPL) Version 2. See the notice at the bottom of this page and COPYING.txt for 
 details. Get ITCC from GitHub https://github.com/themanyone/itcc
 
-Depedencies. Build the optional TINYCC compiler (tcc) (or skip down to the C++ section 
-ad use GCC). The experimntal MOB branch of tcc accepts random contributions from 
+Dependencies. Build the optional TINYCC compiler (tcc) (or skip down to the C++ section 
+ad use GCC). The experimental MOB branch of tcc accepts random contributions from 
 anyone, so check it over carefully! Join the active mailing list, contribute fixes, 
 and update often. git clone https://repo.or.cz/tinycc.git/
 
@@ -221,7 +221,7 @@ Compile everything from the latest sources. Once installed, it will work with ou
 interactive demo here. Also, be sure and get more help, libraries, and resources 
 below.
 
-Interactive hare sssion:
+Interactive hare session:
 
  $./ihare
  ihare 0.3
@@ -341,7 +341,7 @@ evcxr: another Rust REPL https://github.com/evcxr/evcxr
 ipython: interactive python https://github.com/ipython/ipython
 rep.lua: a lua REPL https://github.com/hoelzro/lua-repl
 re.pl: perl command line https://github.com/daurnimator/rep
-d8-314: from V8, Javascript https://developers.google.com/v8/
+d8-314: from V8, JavaScript https://developers.google.com/v8/
 csi: from chicken, a scheme REPL http://call-cc.org/
 RStudio: interactive R coding https://rstudio.com/
 Ruby IRB: REPL tool for Ruby https://ruby-doc.org/stdlib-2.7.2/libdoc/irb/rdoc/IRB.html
