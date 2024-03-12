@@ -21,10 +21,8 @@
 from . import source_code_crap as source_code
 from . import copying
 import subprocess
-import os
 
 docs_url = 'https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf'
-srcfile = source_code.srcfile
 class IGCCQuitException(Exception):
     pass
 
@@ -72,10 +70,11 @@ def dot_l( runner ):
     return False, False
 
 def dot_L( runner ):
-    # print(source_code.get_full_source( runner ))
-    if os.path.isfile(srcfile):
-        with open(srcfile, 'r') as file:
-            highlight(file.read())
+    source = source_code.get_full_source( runner )
+    crap_process = subprocess.Popen( ["crap", "-"],
+        stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+    stdout, stderr = crap_process.communicate(source.encode())
+    highlight(stdout.decode("utf-8"))
     return False, False
 
 def dot_r( runner ):

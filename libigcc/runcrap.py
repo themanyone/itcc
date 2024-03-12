@@ -39,7 +39,6 @@ from . import version
 
 # One day these will be in a config file
 
-srcfile = source_code.srcfile
 prompt = "crap> "
 compiler_command = ( "tcc", "-std=c11", "-x", "c", "-o", "$outfile", "-",
     "$include_dirs", "$lib_dirs", "$libs" )
@@ -108,15 +107,9 @@ def run_compile( subs_compiler_command, runner ):
     #process crap code into valid C code thru pipes
     crap_process = subprocess.Popen( ["crap", "-"],
         stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-
-    # Create tee subprocess to intercept and write the C code
-    tee = subprocess.Popen(['tee', srcfile],
-        stdin = crap_process.stdout, stdout = subprocess.PIPE)
-
     # Prepare compiler to receive C code from stdin
     compile_process = subprocess.Popen( subs_compiler_command,
-        stdin = tee.stdout, stderr = subprocess.PIPE )
-
+        stdin = crap_process.stdout, stderr = subprocess.PIPE )
     # write source code to crap_process stdin and flush stream
     source = source_code.get_full_source(runner)
     if runner.options.v > 2:
@@ -125,7 +118,6 @@ def run_compile( subs_compiler_command, runner ):
     crap_process.stdin.flush()
     crap_process.stdin.close()
     crap_process.wait()
-    tee.wait()
     compile_process.wait()
 
     # read the output from compile_process stdout and stderr
@@ -266,14 +258,6 @@ class Runner:
             undone_input = self.user_input[ self.input_num ]
             self.output_chars_printed -= undone_input.output_chars
             self.error_chars_printed -= undone_input.error_chars
-            source = source_code.get_full_source(self)
-            crap_process = subprocess.Popen( ["crap", "-"],
-                    stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-            stdout, stderr = crap_process.communicate(source.encode())
-            source = stdout.decode("utf-8")
-            with open(srcfile, 'w') as file:
-                file.write(source)
-                file.close()
             return undone_input.inp
         else:
             return None
@@ -349,7 +333,5 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
 
     if os.path.isfile(exefilename):
         os.remove(exefilename)
-    if os.path.isfile(srcfile):
-        os.remove(srcfile)
 
     return ret
