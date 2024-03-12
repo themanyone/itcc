@@ -127,7 +127,7 @@ def process( inp, runner ):
     if inp == ".h":
         return dot_h( runner )
     elif inp[:3] == ".m ":
-        view = "man -S 3:7:0p stdlib.h|highlight -S c -O xterm256 -"
+        view = f"man {inp[3:]}|highlight -S c -O xterm256 -"
         run_process = subprocess.Popen(view, shell=True)
         run_process.wait()
         return False, False
