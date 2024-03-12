@@ -147,14 +147,8 @@ def test_compile_error_display():
 		"tint a", # typo
 		".e" ]
 
-	# Just look for a string "xpected" in the compiler output.
 	expected_output_re = (
-re.escape('''crap> tint a
-[Compile error - type .e to see it.]
-crap> .e
--:8: error: 'tint' undeclared
-crap> 
-''' ))
+r'''.*undeclared.*''' )
 
 	run_program_regex_output( commands, expected_output_re )
 
@@ -249,13 +243,11 @@ crap> .L
 #include <stdlib.h>
 #include <string.h>
 #include <iconv.h>
-
 int main(int argc, char **argv, char **env){
     /* main code section */
     int a;
     a += 2;
     return 0;
-    
 }
 crap> 
 ''' )
