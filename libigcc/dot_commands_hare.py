@@ -21,7 +21,7 @@ from . import source_code_hare as source_code
 from . import copying
 import subprocess
 
-docs_url = 'https://harelang.org/tutorials'
+docs_url = 'https://harelang.org/tutorial'
 class IGCCQuitException(Exception):
     pass
 
