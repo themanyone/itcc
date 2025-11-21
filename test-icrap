@@ -165,6 +165,7 @@ r'''crap> #include <glob.h>
 crap> glob_t pglob
 crap> int g = glob  "*.txt", 0, NULL, &pglob
 crap> for  int i=pglob.gl_pathc;i--;  puts  pglob.gl_pathv[i]
+requirements.txt
 README.txt
 COPYING.txt
 crap> 

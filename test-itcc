@@ -167,6 +167,7 @@ r'''tcc> #include <glob.h>
 tcc> glob_t pglob;
 tcc> int g = glob("*.txt", 0, NULL, &pglob);
 tcc> for (int i=pglob.gl_pathc;i--;){ puts(pglob.gl_pathv[i]);}
+requirements.txt
 README.txt
 COPYING.txt
 tcc> 
