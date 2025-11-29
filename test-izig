@@ -91,15 +91,17 @@ def test_print_argv():
     "const gpa = general_purpose_allocator.allocator();",
     "const args = try std.process.argsAlloc(gpa);",
     "defer std.process.argsFree(gpa, args);",
-    "for (args[2..]) |arg, i| {",
+    "for (args[2..], 0..) |arg, i| {",
     "   std.debug.print(\"{}: {s}\\n\", .{ i, arg });",
     "}"]
-	expected_output = """zig> var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
+	expected_output = r"""zig> var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
 zig> const gpa = general_purpose_allocator.allocator();
 zig> const args = try std.process.argsAlloc(gpa);
 zig> defer std.process.argsFree(gpa, args);
-zig> for (args[2..]) |arg, i| {
-zig>    std.debug.print("{}: {s}\\n", .{ i, arg });
+zig> for (args[2..], 0..) |arg, i| {
+[Compile error - type .e to see it.]
+zig>    std.debug.print("{}: {s}\n", .{ i, arg });
+[Compile error - type .e to see it.]
 zig> }
 0: bar
 1: baz
@@ -108,21 +110,21 @@ zig>
 	run_program( commands, expected_output, False, ['--', 'foo', 'bar', 'baz'] )
 
 def test_declare_var():
-	commands = [ "var a: i32 = 0;" ]
-	expected_output = 'zig> var a: i32 = 0;\nzig> \n'
+	commands = [ "const a: i32 = 0;" ]
+	expected_output = 'zig> const a: i32 = 0;\nzig> \n'
 	run_program( commands, expected_output )
 
 def test_declare_var_assign():
-	commands = [ "var a: i32 = 10;" ]
-	expected_output = 'zig> var a: i32 = 10;\nzig> \n'
+	commands = [ "const a: i32 = 10;" ]
+	expected_output = 'zig> const a: i32 = 10;\nzig> \n'
 	run_program( commands, expected_output )
 
 def test_declare_and_assign_var_then_print():
-	commands = [ "var a: i32 = 13;",
+	commands = [ "const a: i32 = 13;",
 		'std.debug.print("{}", .{a});' ]
 
 	expected_output = (
-'''zig> var a: i32 = 13;
+'''zig> const a: i32 = 13;
 zig> std.debug.print("{}", .{a});
 13
 zig> 
@@ -139,8 +141,9 @@ def test_print_twice():
 	expected_output = (
 '''zig> var a: i32 = 10;
 zig> std.debug.print("{}", .{a});
-10
+[Compile error - type .e to see it.]
 zig> a += 1;
+10
 zig> std.debug.print("{}", .{a});
 11
 zig> 
@@ -149,10 +152,10 @@ zig>
 	run_program( commands, expected_output )
 
 def test_compile_error():
-	commands = [ "var a: i32" ] # no semicolon
+	commands = [ "const a: i32" ] # no semicolon
 
 	expected_output = (
-'''zig> var a: i32
+'''zig> const a: i32
 [Compile error - type .e to see it.]
 zig> 
 ''' )
@@ -161,7 +164,7 @@ zig>
 
 def test_compile_error_display():
 	commands = [
-		"var a: i32", # no semicolon
+		"const a: i32", # no semicolon
 		".e" ]
 
 	# Just look for a string "xpected" in the compiler output.
@@ -326,10 +329,15 @@ def test_include_dir_on_cmd_line():
 
 	expected_output = (
 '''zig> const c = @cImport({
+[Compile error - type .e to see it.]
 zig>     // See https://github.com/ziglang/zig/issues/515
+[Compile error - type .e to see it.]
 zig>     @cDefine("_NO_CRT_STDIO_INLINE", "1");
+[Compile error - type .e to see it.]
 zig>     @cInclude("stdio.h");
+[Compile error - type .e to see it.]
 zig>     @cInclude("hello.h");
+[Compile error - type .e to see it.]
 zig> });
 zig> c.hello();
 Hello, 
@@ -371,11 +379,17 @@ def test_2_include_dirs_on_cmd_line():
 ]
 	expected_output = (
 '''zig> const c = @cImport({
+[Compile error - type .e to see it.]
 zig>     // See https://github.com/ziglang/zig/issues/515
+[Compile error - type .e to see it.]
 zig>     @cDefine("_NO_CRT_STDIO_INLINE", "1");
+[Compile error - type .e to see it.]
 zig>     @cInclude("stdio.h");
+[Compile error - type .e to see it.]
 zig>     @cInclude("hello.h");
+[Compile error - type .e to see it.]
 zig>     @cInclude("world.h");
+[Compile error - type .e to see it.]
 zig> });
 zig> c.hello();
 Hello, 
@@ -411,11 +425,11 @@ void world() {
 
 
 def test_lib():
-	commands = [ 'var a: i32 = @maximum(4, 6);',
+	commands = [ 'const a: i32 = @max(4, 6);',
 		'std.debug.print("{}", .{a});', ]
 
 	expected_output = (
-'''zig> var a: i32 = @maximum(4, 6);
+'''zig> const a: i32 = @max(4, 6);
 zig> std.debug.print("{}", .{a});
 6
 zig> 
@@ -545,20 +559,20 @@ zig>
 
 def test_undo_before_beginning():
 	commands = [
-		'var a: i32 = 5;',
+		'const a: i32 = 5;',
 		'.u',
 		'.u',
 		'.u',
 		'std.debug.print("{}", .{a});',
 		'.u',
-		'var b: i32 = 7;',
+		'const b: i32 = 7;',
 		' std.debug.print("{}", .{b});',
 		]
 
 	expected_output = (
-r'''zig> var a: i32 = 5;
+r'''zig> const a: i32 = 5;
 zig> .u
-[Undone '    var a: i32 = 5;'.]
+[Undone '    const a: i32 = 5;'.]
 zig> .u
 [Nothing to undo.]
 zig> .u
@@ -567,7 +581,7 @@ zig> std.debug.print("{}", .{a});
 [Compile error - type .e to see it.]
 zig> .u
 [Undone '    std.debug.print("{}", .{a});'.]
-zig> var b: i32 = 7;
+zig> const b: i32 = 7;
 zig>  std.debug.print("{}", .{b});
 7
 zig> 
@@ -728,7 +742,7 @@ def test_redo_includes_and_commands():
 		'    @cInclude("stdio.h");',
 		'});'
 		'const items = [_]i32 { 4, 5, 3, 4, 0 };',
-		'for (items) |value, i| {',
+		'for (items, 0..) |value, i| {',
 		'    _ = c.printf("%d:%d  ", i, value);',
 		'}',
 		'.u',
@@ -751,11 +765,16 @@ def test_redo_includes_and_commands():
 
 	expected_output = (
 r'''zig> const c = @cImport({
+[Compile error - type .e to see it.]
 zig>     @cDefine("_NO_CRT_STDIO_INLINE", "1");
+[Compile error - type .e to see it.]
 zig>     @cInclude("stdio.h");
+[Compile error - type .e to see it.]
 zig> });const items = [_]i32 { 4, 5, 3, 4, 0 };
-zig> for (items) |value, i| {
+zig> for (items, 0..) |value, i| {
+[Compile error - type .e to see it.]
 zig>     _ = c.printf("%d:%d  ", i, value);
+[Compile error - type .e to see it.]
 zig> }
 0:4  1:5  2:3  3:4  4:0  
 zig> .u
@@ -763,7 +782,7 @@ zig> .u
 zig> .u
 [Undone '        _ = c.printf("%d:%d  ", i, value);'.]
 zig> .u
-[Undone '    for (items) |value, i| {'.]
+[Undone '    for (items, 0..) |value, i| {'.]
 zig> .u
 [Undone '    });const items = [_]i32 { 4, 5, 3, 4, 0 };'.]
 zig> .u
@@ -776,16 +795,21 @@ zig> .u
 [Nothing to undo.]
 zig> .r
 [Redone '    const c = @cImport({'.]
+[Compile error - type .e to see it.]
 zig> .r
 [Redone '        @cDefine("_NO_CRT_STDIO_INLINE", "1");'.]
+[Compile error - type .e to see it.]
 zig> .r
 [Redone '        @cInclude("stdio.h");'.]
+[Compile error - type .e to see it.]
 zig> .r
 [Redone '    });const items = [_]i32 { 4, 5, 3, 4, 0 };'.]
 zig> .r
-[Redone '    for (items) |value, i| {'.]
+[Redone '    for (items, 0..) |value, i| {'.]
+[Compile error - type .e to see it.]
 zig> .r
 [Redone '        _ = c.printf("%d:%d  ", i, value);'.]
+[Compile error - type .e to see it.]
 zig> .r
 [Redone '    }'.]
 0:4  1:5  2:3  3:4  4:0  
@@ -827,7 +851,7 @@ zig>
 
 def test_undo_redo_with_output():
 	commands = [
-		'var a: i32 = 56;',
+		'const a: i32 = 56;',
 		'std.debug.print("{}\\n", .{a});',
 		'.u',
 		'.r',
@@ -836,7 +860,7 @@ def test_undo_redo_with_output():
 		]
 
 	expected_output = (
-r'''zig> var a: i32 = 56;
+r'''zig> const a: i32 = 56;
 zig> std.debug.print("{}\n", .{a});
 56
 zig> .u
@@ -864,8 +888,9 @@ def test_print_stderr_twice():
 r'''zig> const eprint = @import("std").debug.print;
 zig> var a: i32 = 10;
 zig> eprint("{}\n", .{a});
-10
+[Compile error - type .e to see it.]
 zig> a += 1;
+10
 zig> eprint("{}\n", .{a});
 11
 zig> 
@@ -885,8 +910,9 @@ def test_print_stderr_stdout():
 r'''zig> const eprint = @import("std").debug.print;
 zig> var a: i32 = 10;
 zig> eprint("{}", .{a});
-10
+[Compile error - type .e to see it.]
 zig> a += 1;
+10
 zig> std.debug.print("{}\n", .{a});
 11
 zig> 

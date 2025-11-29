@@ -73,9 +73,8 @@ def create_read_line_function( inputfile, prompt ):
 
 def get_temporary_file_name():
     suff = ".exe" if platform.system() == 'Windows' else ""
-    outfile = tempfile.NamedTemporaryFile( prefix = 'izig', suffix = suff )
-    outfilename = outfile.name
-    outfile.close()
+    fd, outfilename = tempfile.mkstemp( prefix = 'izig', suffix = suff )
+    os.close(fd)
     return outfilename
 
 def append_multiple( single_cmd, cmdlist, ret ):

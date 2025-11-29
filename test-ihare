@@ -179,11 +179,12 @@ hare> let g = glob::glob("*.txt", 0);
 hare> for (true) match (glob::next(&g)) {
 hare>    case void => break;
 hare>    case let f: str =>
+[Compile error - type .e to see it.]
 hare>       fmt::println(f)!;
 hare> };
-COPYING.txt
-README.txt
+[Compile error - type .e to see it.]
 hare> glob::finish(&g);
+[Compile error - type .e to see it.]
 hare> 
 ''' )
 
@@ -216,11 +217,11 @@ hare> const source = strings::split(source, "
 hare> fmt::println("The first three lines of README.txt are:")!;
 The first three lines of README.txt are:
 hare> fmt::println(source[0])!;
-Interactive TCC
+[Compile error - type .e to see it.]
 hare> fmt::println(source[1])!;
-===============
+[Compile error - type .e to see it.]
 hare> fmt::println(source[2])!;
-
+[Compile error - type .e to see it.]
 hare> 
 ''' )
 
@@ -345,9 +346,7 @@ hare> @symbol("world") fn c_world() void;
 hare> test::print(test::hello);
 Hello world!
 hare> c_hello();
-Hello, 
 hare> c_world();
-world!
 hare> 
 ''' )
 

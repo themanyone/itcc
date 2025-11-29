@@ -1,0 +1,10 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "math.h"
+
+int main(){
+    float a = pow( 5.0, 5.0 );
+    printf("pow 5^5 = %.1f\n", a);
+    return 0;
+}
