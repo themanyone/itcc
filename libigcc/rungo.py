@@ -317,18 +317,20 @@ def run( outputfile = sys.stdout, inputfile = None, print_welc = True,
 
     # Use a with statement block to redirect sys.stdout
     with redirect_stdout(outputfile):
-        #try:
-        options, extra_args, session_args = parse_args(argv)
+        try:
+            options, extra_args, session_args = parse_args(argv)
 
-        exefilename = get_temporary_file_name()
-        srcfilename = exefilename + ".go"
-        ret = "normal"
-        if print_welc:
-            print_welcome()
-        Runner(options, extra_args, inputfile, srcfilename, exefilename).do_run(session_args)
-        #except Exception as e:
-        #    print(e)
-        #    ret = "quit"
+            exefilename = get_temporary_file_name()
+            srcfilename = exefilename + ".go"
+            ret = "normal"
+            if print_welc:
+                print_welcome()
+            Runner(options, extra_args, inputfile, srcfilename, exefilename).do_run(session_args)
+        except dot_commands.IGCCQuitException:
+            ret = "quit"
+        except Exception as e:
+            print(e)
+            ret = "quit"
 
     if os.path.isfile(exefilename): # never happens
         os.remove(exefilename)
