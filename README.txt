@@ -3,17 +3,17 @@ Interactive TCC
 
 Make programming fun like Python.
 
-An command-line shell for C, C++, Rust, Hare, Go, Zig, and the concise, regex-aware 
-CPP (CRAP). Also known as an evaluation context, or read-eval-print loop (REPL), this 
-revolutionary shell tool allows programmers to type commands in a variety of compiled 
-langauges and see immediate results.
-
-About this project. Interactive TCC (itcc) is a copy of Interactive GCC (igcc) by Andy 
-Balaam. This fork builds upon it and adds support for other programming languages. We 
+Interactive TCC (itcc) is a copy of Interactive GCC (igcc) by Andy Balaam.
+This fork builds upon it and adds support for other programming languages. We 
 do our best to make the code work for us, but it comes with NO Warranties. You are 
 free to share and modify free software in according with the GNU General Public 
 License (GPL) Version 2. See the notice at the bottom of this page and COPYING.txt for 
 details. Get ITCC from GitHub https://github.com/themanyone/itcc
+
+A command-line shell for C, C++, Rust, Hare, Go, Zig, and the concise, regex-aware 
+CPP (CRAP). Also known as an evaluation context, or read-eval-print loop (REPL), this 
+revolutionary shell tool allows programmers to see immediate results from typing
+commands in a variety of compiled langauges.
 
 Dependencies. Build the optional TINYCC compiler (tcc) (or skip down to the C++ 
 section and use GCC). The experimental MOB branch of tcc accepts random contributions 
@@ -23,12 +23,15 @@ fixes, and update often. git clone https://repo.or.cz/tinycc.git/
 Now with color listings. Install Colorama Highlight (required). Available through your
 distro package manager, conda, or pip.
 
-The main reason we like tcc is instant gratification. Owing to its small download 
-size, and the smallness of the resulting executables, tcc's one-pass build ensures 
-virtually no compiler delays between entering code and seeing the results! Tcc 
-supports Windows, Linux, Android and other targets with many common GCC extensions. 
-But it might lack some of the GNU extensions and optimizations available with GCC. 
-Also, tcc is a C compiler, not a C/C++ compiler suite like GCC.
+It is not necessary to install every programming language and compiler supported 
+by this project. You can use just the gcc portion, or try tcc.
+
+The main reason we like tcc so much is instant gratification. Owing to its 
+small download size, and the smallness of the resulting executables, tcc's one-pass 
+build ensures virtually no compiler delays between entering code and seeing the 
+results! Tcc supports Windows, Linux, Android and other targets with many common GCC 
+extensions. But it might lack some of the GNU extensions and optimizations available 
+with GCC. Also, tcc is a C compiler, not a C/C++ compiler suite like GCC.
 
 Use our Interactive tcc shell, like this:
 
@@ -398,9 +401,9 @@ IGCC comes with NO WARRANTY
 
 See the file COPYING for more information.
 
-This fork is maintained with updated code, which is Copyright (C) 2024 by Henry Kroll 
-III under the same license. Blame him if there are problems with these updates. Issues 
-for this fork are maintained on GitHub.
+This fork contains some code that is Copyright (C) 2026 by Henry Kroll III 
+under the same license. Blame him if there are problems with these updates. 
+Issues discussion: https://github.com/themanyone/itcc/issues
 
 Browse Themanyone
 - GitHub https://github.com/themanyone
